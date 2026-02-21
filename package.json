@@ -27,7 +27,7 @@
         }
     },
     "scripts": {
-        "build": "tsup index.ts --format cjs,esm --dts --clean --sourcemap",
+        "build": "tsup src/index.ts --format cjs,esm --dts --clean --sourcemap",
         "prepublishOnly": "npm run build",
         "test": "vitest run --coverage",
         "test:watch": "vitest",

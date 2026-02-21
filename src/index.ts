@@ -23,6 +23,12 @@ export type RuntimeReporterMessages<T extends RuntimeReporterMessage[]> = {
 export type RuntimeReporterToken = string | number | boolean | Error | null | undefined;
 
 /**
+ * The type for a record of placeholder token names and their values
+ * @since v0.2.0
+ */
+export type RuntimeReporterTokens = Record<string, RuntimeReporterToken>;
+
+/**
  * A utility type used to determine the second argument of the runtime reporter methods
  * @private
  */

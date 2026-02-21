@@ -1,9 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import {
-    createRuntimeReporter,
-    type RuntimeReporterMessage,
-    type RuntimeReporterMessages,
-} from "./index.js";
+import { createRuntimeReporter, type RuntimeReporterMessages } from "./index.js";
 
 type TestMessages = Array<
     | {
