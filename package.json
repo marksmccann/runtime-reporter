@@ -36,6 +36,7 @@
         "format": "prettier --write .",
         "format:check": "prettier --check .",
         "commit": "cz",
+        "release": "release-it",
         "prepare": "husky"
     },
     "lint-staged": {
@@ -68,6 +69,7 @@
         "@commitlint/cli": "^20.4.2",
         "@commitlint/config-conventional": "^20.4.2",
         "@eslint/js": "^10.0.1",
+        "@release-it/conventional-changelog": "^10.0.5",
         "@typescript-eslint/eslint-plugin": "^8.56.0",
         "@typescript-eslint/parser": "^8.56.0",
         "@vitest/coverage-v8": "^4.0.18",
@@ -80,6 +82,7 @@
         "husky": "^9.1.7",
         "lint-staged": "^16.2.7",
         "prettier": "^3.8.1",
+        "release-it": "^19.2.4",
         "tsup": "^8.5.1",
         "typescript": "^5.9.3",
         "typescript-eslint": "^8.56.0",
