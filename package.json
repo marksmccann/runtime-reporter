@@ -1,6 +1,6 @@
 {
     "name": "runtime-reporter",
-    "version": "0.1.0",
+    "version": "0.2.0",
     "description": "Runtime messaging that is convenient in development and secure in production",
     "type": "module",
     "main": "./dist/index.cjs",
