@@ -46,7 +46,7 @@ type RuntimeReporterTokensArgs<
 
 /**
  * The runtime report object with all of it's associated methods; the result
- * of the primary export: `createRuntimeReporter`
+ * of the primary export: `createReporter`
  * @private
  */
 interface RuntimeReporter<T extends RuntimeReporterMessages<RuntimeReporterMessage[]>> {
@@ -67,7 +67,7 @@ interface RuntimeReporter<T extends RuntimeReporterMessages<RuntimeReporterMessa
      * Logs a warning to the console with the full text of the targeted message in non-production environments
      *
      * _Note: This method will only log when the message associated with the code is found;
-     * meaning it will not be called in production if the `createRuntimeReporter` function
+     * meaning it will not be called in production if the `createReporter` function
      * is provided an empty array._
      * @param code A direct reference to the unique code for the targeted message
      * @param args The remaining optional argument for the function; a record containing the placeholder token values
@@ -81,7 +81,7 @@ interface RuntimeReporter<T extends RuntimeReporterMessages<RuntimeReporterMessa
      * Logs an error to the console with the full text of the targeted message in non-production environments
      *
      * _Note: This method will only log when the message associated with the code is found;
-     * meaning it will not be called in production if the `createRuntimeReporter` function
+     * meaning it will not be called in production if the `createReporter` function
      * is provided an empty array._
      * @param code A direct reference to the unique code for the targeted message
      * @param args The remaining optional argument for the function; a record containing the placeholder token values
@@ -95,7 +95,7 @@ interface RuntimeReporter<T extends RuntimeReporterMessages<RuntimeReporterMessa
      * Logs a message to the console with the full text of the targeted message in non-production environments
      *
      * _Note: This method will only log when the message associated with the code is found;
-     * meaning it will not be called in production if the `createRuntimeReporter` function
+     * meaning it will not be called in production if the `createReporter` function
      * is provided an empty array._
      * @param code A direct reference to the unique code for the targeted message
      * @param args The remaining optional argument for the function; a record containing the placeholder token values
@@ -108,7 +108,7 @@ interface RuntimeReporter<T extends RuntimeReporterMessages<RuntimeReporterMessa
     /**
      * Throws an error with the full text of the targeted message in all environments
      *
-     * _Note: When the `createRuntimeReporter` function is called in production with an empty
+     * _Note: When the `createReporter` function is called in production with an empty
      * array, this method will use the "defaultTemplate" option in this format: "<defaultTemplate> (<code>)"_
      * @param code A direct reference to the unique code for the targeted message
      * @param args The remaining optional argument for the function; a record containing the placeholder token values
@@ -134,7 +134,7 @@ export interface RuntimeReporterOptions {
      * have an associated message. Defaults to "An error occurred"
      *
      * _Note: This is only used when the `fail` method is called in production
-     * environments when the `createRuntimeReporter` function is provided an empty array._
+     * environments when the `createReporter` function is provided an empty array._
      */
     defaultTemplate?: string;
 }
@@ -169,7 +169,7 @@ const resolveTemplate = function resolveTemplate(
  * @param options Optional configuration options
  * @returns A runtime report object
  */
-export function createRuntimeReporter<T extends RuntimeReporterMessages<RuntimeReporterMessage[]>>(
+export function createReporter<T extends RuntimeReporterMessages<RuntimeReporterMessage[]>>(
     messages: T,
     options: RuntimeReporterOptions = {}
 ): RuntimeReporter<T> {

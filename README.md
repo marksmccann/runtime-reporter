@@ -4,14 +4,16 @@ Runtime messaging that is convenient in development and secure in production.
 
 ## Features
 
-- **Production friendly**: Pass an empty message set in production to avoid exposing internal messaging.
-- **Centralized messages**: Define message text once; reference by code everywhere.
+- **Security minded**: Pass an empty message set in production to avoid exposing internal messaging.
+- **Centralized messages**: Define message text once; reference by a unique code everywhere else.
 - **Tokenized templates**: Apply runtime data to messages via templated strings and tokenized variables.
 - **Type-safe**: Autocomplete and compile-time validation for message codes and token names.
 - **Tree-shakeable**: Pass an empty message set in production to reduce your bundle size
 - **Test friendly**: Use `message()` to assert on final output without duplicating message text.
-- **Dual module output**: Works with both ESM and CJS consumers.
-- **Code-based messaging**: Coded messages make it easy can find errors and perform debugging tasks.
+- **Dual module output**: Works with both ESM and CJS project environments.
+- **Code-based messaging**: Coded messages make it easy to identify and find errors to perform debugging tasks.
+- **Small footprint**: Minimal bundle size (~2 KB minified) so it adds negligible weight to your app.
+- **Zero dependencies**: No runtime dependencies; the published package is fully self-contained.
 
 ## Installation
 
@@ -28,7 +30,7 @@ Define the message “schema” (code + template + tokens), then create a `messa
 ```ts
 import type { RuntimeReporterMessages } from "runtime-reporter";
 
-type RuntimeMessages = Array<
+type MyMessages = Array<
     | {
           code: "ERR01";
           template: "{{ componentName }} failed to mount";
@@ -41,7 +43,7 @@ type RuntimeMessages = Array<
       }
 >;
 
-const messages: RuntimeReporterMessages<RuntimeMessages> = {
+const messages: RuntimeReporterMessages<MyMessages> = {
     ERR01: "{{ componentName }} failed to mount",
     INFO01: "Ready",
 };
@@ -49,19 +51,20 @@ const messages: RuntimeReporterMessages<RuntimeMessages> = {
 
 ### 2) Create the reporter
 
-Create a reporter instance. In production builds, you can pass an empty object so template strings don’t get logged (and can be removed by bundlers when guarded by an env check).
+Pass your messages to `createReporter()` to create a reporter instance.
 
 ```ts
-import { createRuntimeReporter } from "runtime-reporter";
+import { createReporter } from "runtime-reporter";
 
-export const reporter = createRuntimeReporter(
-    process.env.NODE_ENV !== "production" ? messages : ({} as typeof messages)
+export const reporter = createReporter(
+    // Pass an empty object in production for better security and a smaller bundle size
+    process.env.NODE_ENV === "production" ? ({} as typeof messages) : messages
 );
 ```
 
 ### 3) Use the reporter
 
-Call the various reporter methods wherever you need them. Pass them the code of the desired message along with any required tokens.
+Call the various reporter methods wherever you need them.
 
 ```ts
 reporter.error("ERR01", { componentName: "MyComponent" });
@@ -73,19 +76,19 @@ reporter.message("INFO01");
 
 ## API
 
-### `createRuntimeReporter(RuntimeReporterMessages, options?: RuntimeReporterOptions): RuntimeReporter`
+### `createReporter(RuntimeReporterMessages, options?: RuntimeReporterOptions): RuntimeReporter`
 
 Takes a list of messages, an optional set of configuration options, and returns a reporter object.
 
 ### `RuntimeReporter`
 
-| Property | Type                                                       | Description                                                                                                                             |
-| -------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| message  | `(code: string, tokens:? RuntimeReporterTokens) => string` | Returns the resolved message (no logging); useful for testing environments.                                                             |
-| warn     | `(code: string, tokens:? RuntimeReporterTokens) => void`   | Logs via `console.warn` **only if** the template exists in `messages`.                                                                  |
-| error    | `(code: string, tokens:? RuntimeReporterTokens) => void`   | Logs via `console.error` **only if** the template exists in `messages`.                                                                 |
-| log      | `(code: string, tokens:? RuntimeReporterTokens) => void`   | Logs via `console.log` **only if** the template exists in `messages`.                                                                   |
-| fail     | `(code: string, tokens:? RuntimeReporterTokens) => never`  | Throws `new Error(resolvedMessage)` in **all** environments. Uses the `defaultTemplate` when the template does not exist in `messages`. |
+| Method  | Type                                                       | Description                                                                                                                             |
+| ------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| message | `(code: string, tokens:? RuntimeReporterTokens) => string` | Returns the resolved message (no logging); useful for testing environments.                                                             |
+| warn    | `(code: string, tokens:? RuntimeReporterTokens) => void`   | Logs via `console.warn` **only if** the template exists in `messages`.                                                                  |
+| error   | `(code: string, tokens:? RuntimeReporterTokens) => void`   | Logs via `console.error` **only if** the template exists in `messages`.                                                                 |
+| log     | `(code: string, tokens:? RuntimeReporterTokens) => void`   | Logs via `console.log` **only if** the template exists in `messages`.                                                                   |
+| fail    | `(code: string, tokens:? RuntimeReporterTokens) => never`  | Throws `new Error(resolvedMessage)` in **all** environments. Uses the `defaultTemplate` when the template does not exist in `messages`. |
 
 ### `RuntimeReporterOptions`
 
@@ -96,16 +99,16 @@ Takes a list of messages, an optional set of configuration options, and returns 
 
 ### `RuntimeReporterTokens`
 
-| Property | Type                   | Description                                                                                                                 |
-| -------- | ---------------------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `string` | `RuntimeReporterToken` | A record of token names along with their replacement value. Supported types include: `string`, `number`, `boolean`, `Error` |
+| Property | Type                   | Description                                                                                                                  |
+| -------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `string` | `RuntimeReporterToken` | A record of token names along with their replacement value. Supported types include: `string`, `number`, `boolean`, `Error`. |
 
 ## Examples
 
 ### Custom formatting
 
 ```ts
-const reporter = createRuntimeReporter(messages, {
+const reporter = createReporter(messages, {
     formatMessage: (msg, code) => `[${code}] ${msg}`,
 });
 
@@ -115,7 +118,7 @@ reporter.message("INFO01");
 
 ### Using `message()` in tests
 
-`message()` returns the resolved string without side effects, allowing you to validate precise messaging without duplicating test.
+The `message` method returns the resolved string without side effects, allowing you to validate precise messaging without duplicating text.
 
 ```ts
 import { describe, it, expect, vi } from "vitest";
@@ -139,5 +142,5 @@ If needed, Common JS imports are also available.
 
 ```js
 // CJS
-const { createRuntimeReporter } = require("runtime-reporter");
+const { createReporter } = require("runtime-reporter");
 ```
