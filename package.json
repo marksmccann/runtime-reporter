@@ -1,7 +1,7 @@
 {
     "name": "runtime-reporter",
     "version": "0.2.0",
-    "description": "Runtime messaging that is convenient in development and secure in production",
+    "description": "Structured runtime events for applications and frameworks. A composable foundation for logging, messaging, and runtime reporting.",
     "type": "module",
     "main": "./dist/index.cjs",
     "module": "./dist/index.js",

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createReporter, type RuntimeReporterMessages } from "./index.js";
 
-type TestMessages = Array<
+type TestMessages =
     | {
           code: "ERR01";
           template: "{{ name }} failed";
@@ -16,8 +16,7 @@ type TestMessages = Array<
           code: "INFO03";
           template: "Ready";
           tokens?: undefined;
-      }
->;
+      };
 
 const messages: RuntimeReporterMessages<TestMessages> = {
     ERR01: "{{ name }} failed",

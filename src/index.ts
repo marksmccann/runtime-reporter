@@ -12,8 +12,8 @@ export type RuntimeReporterMessage = {
  * The type for a full list of messages with their associated code and template
  * @since v0.1.0
  */
-export type RuntimeReporterMessages<T extends RuntimeReporterMessage[]> = {
-    [K in T[number]["code"]]: Extract<T[number], { code: K }>["template"];
+export type RuntimeReporterMessages<T extends RuntimeReporterMessage> = {
+    [K in T["code"]]: Extract<T, { code: K }>["template"];
 };
 
 /**
@@ -33,11 +33,11 @@ export type RuntimeReporterTokens = Record<string, RuntimeReporterToken>;
  * @private
  */
 type RuntimeReporterTokensArgs<
-    T extends RuntimeReporterMessages<RuntimeReporterMessage[]>,
+    T extends RuntimeReporterMessages<RuntimeReporterMessage>,
     U extends keyof T,
 > =
-    T extends RuntimeReporterMessages<infer V extends RuntimeReporterMessage[]>
-        ? Extract<V[number], { code: U }>["tokens"] extends infer Tokens
+    T extends RuntimeReporterMessages<infer V extends RuntimeReporterMessage>
+        ? Extract<V, { code: U }>["tokens"] extends infer Tokens
             ? Tokens extends readonly string[]
                 ? [tokens: Record<Tokens[number], RuntimeReporterToken>]
                 : []
@@ -49,7 +49,7 @@ type RuntimeReporterTokensArgs<
  * of the primary export: `createReporter`
  * @private
  */
-interface RuntimeReporter<T extends RuntimeReporterMessages<RuntimeReporterMessage[]>> {
+interface RuntimeReporter<T extends RuntimeReporterMessages<RuntimeReporterMessage>> {
     /**
      * Retrieves the full text of the targeted message
      *
@@ -68,7 +68,7 @@ interface RuntimeReporter<T extends RuntimeReporterMessages<RuntimeReporterMessa
      *
      * _Note: This method will only log when the message associated with the code is found;
      * meaning it will not be called in production if the `createReporter` function
-     * is provided an empty array._
+     * is provided an empty message set._
      * @param code A direct reference to the unique code for the targeted message
      * @param args The remaining optional argument for the function; a record containing the placeholder token values
      */
@@ -82,7 +82,7 @@ interface RuntimeReporter<T extends RuntimeReporterMessages<RuntimeReporterMessa
      *
      * _Note: This method will only log when the message associated with the code is found;
      * meaning it will not be called in production if the `createReporter` function
-     * is provided an empty array._
+     * is provided an empty message set._
      * @param code A direct reference to the unique code for the targeted message
      * @param args The remaining optional argument for the function; a record containing the placeholder token values
      */
@@ -96,7 +96,7 @@ interface RuntimeReporter<T extends RuntimeReporterMessages<RuntimeReporterMessa
      *
      * _Note: This method will only log when the message associated with the code is found;
      * meaning it will not be called in production if the `createReporter` function
-     * is provided an empty array._
+     * is provided an empty message set._
      * @param code A direct reference to the unique code for the targeted message
      * @param args The remaining optional argument for the function; a record containing the placeholder token values
      */
@@ -109,7 +109,7 @@ interface RuntimeReporter<T extends RuntimeReporterMessages<RuntimeReporterMessa
      * Throws an error with the full text of the targeted message in all environments
      *
      * _Note: When the `createReporter` function is called in production with an empty
-     * array, this method will use the "defaultTemplate" option in this format: "<defaultTemplate> (<code>)"_
+     * message set, this method will use the "defaultTemplate" option in this format: "<defaultTemplate> (<code>)"_
      * @param code A direct reference to the unique code for the targeted message
      * @param args The remaining optional argument for the function; a record containing the placeholder token values
      */
@@ -121,7 +121,7 @@ interface RuntimeReporter<T extends RuntimeReporterMessages<RuntimeReporterMessa
 
 export interface RuntimeReporterOptions {
     /**
-     * A hook to format the message text univerally. By default, it
+     * A hook to format the message text universally. By default, it
      * outputs the message in the following format: "<message> (<code>)"
      * @param message The resolved message text; the placeholders have been replaced by their token values
      * @param code The unique code associated with the message
@@ -134,7 +134,7 @@ export interface RuntimeReporterOptions {
      * have an associated message. Defaults to "An error occurred"
      *
      * _Note: This is only used when the `fail` method is called in production
-     * environments when the `createReporter` function is provided an empty array._
+     * environments when the `createReporter` function is provided an empty message set._
      */
     defaultTemplate?: string;
 }
@@ -155,8 +155,8 @@ const resolveTemplate = function resolveTemplate(
         Object.entries(tokens || {}).forEach((entry) => {
             const [token, value] = entry;
             const replace = value instanceof Error ? value.message : String(value ?? "");
-            const santized = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-            message = message.replace(new RegExp(`\\{\\{\\s*${santized}\\s*\\}\\}`, "g"), replace);
+            const sanitized = token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            message = message.replace(new RegExp(`\\{\\{\\s*${sanitized}\\s*\\}\\}`, "g"), replace);
         });
     }
 
@@ -169,7 +169,7 @@ const resolveTemplate = function resolveTemplate(
  * @param options Optional configuration options
  * @returns A runtime report object
  */
-export function createReporter<T extends RuntimeReporterMessages<RuntimeReporterMessage[]>>(
+export function createReporter<T extends RuntimeReporterMessages<RuntimeReporterMessage>>(
     messages: T,
     options: RuntimeReporterOptions = {}
 ): RuntimeReporter<T> {

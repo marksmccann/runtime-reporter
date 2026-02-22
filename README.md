@@ -1,19 +1,19 @@
 # Runtime Reporter
 
-Runtime messaging that is convenient in development and secure in production.
+Structured runtime events for applications and frameworks. A composable foundation for logging, messaging, and runtime reporting.
 
 ## Features
 
-- **Security minded**: Pass an empty message set in production to avoid exposing internal messaging.
+- **Security focused**: Pass an empty message set in production to avoid exposing internal messaging.
 - **Centralized messages**: Define message text once; reference by a unique code everywhere else.
 - **Tokenized templates**: Apply runtime data to messages via templated strings and tokenized variables.
 - **Type-safe**: Autocomplete and compile-time validation for message codes and token names.
 - **Tree-shakeable**: Pass an empty message set in production to reduce your bundle size
 - **Test friendly**: Use `message()` to assert on final output without duplicating message text.
-- **Dual module output**: Works with both ESM and CJS project environments.
-- **Code-based messaging**: Coded messages make it easy to identify and find errors to perform debugging tasks.
+- **Code-based messaging**: Coded messages make it easy to identify errors to perform debugging tasks.
 - **Small footprint**: Minimal bundle size (~2 KB minified) so it adds negligible weight to your app.
 - **Zero dependencies**: No runtime dependencies; the published package is fully self-contained.
+- **Scalable pattern**: Can scale to fit your specific needs regardless of your project's size.
 
 ## Installation
 
@@ -30,7 +30,7 @@ Define the message “schema” (code + template + tokens), then create a `messa
 ```ts
 import type { RuntimeReporterMessages } from "runtime-reporter";
 
-type MyMessages = Array<
+type MyMessages =
     | {
           code: "ERR01";
           template: "{{ componentName }} failed to mount";
@@ -40,8 +40,7 @@ type MyMessages = Array<
           code: "INFO01";
           template: "Ready";
           tokens?: undefined;
-      }
->;
+      };
 
 const messages: RuntimeReporterMessages<MyMessages> = {
     ERR01: "{{ componentName }} failed to mount",
@@ -107,6 +106,8 @@ Takes a list of messages, an optional set of configuration options, and returns 
 
 ### Custom formatting
 
+You can customize the format of the message by providing a custom `formatMessage` function.
+
 ```ts
 const reporter = createReporter(messages, {
     formatMessage: (msg, code) => `[${code}] ${msg}`,
@@ -129,7 +130,7 @@ describe("reporter messages", () => {
         vi.spyOn(console, "error").mockImplementation(() => {});
         reporter.error("ERR01", { componentName: "Widget" });
 
-        expect(console.error).toHaveBeenCalledWidth(
+        expect(console.error).toHaveBeenCalledWith(
             reporter.message("ERR01", { componentName: "Widget" })
         );
     });
