@@ -2,18 +2,20 @@
 
 Structured runtime events for applications and frameworks. A composable foundation for logging, messaging, and runtime reporting.
 
+Modern applications often rely on complex logging solutions or ad-hoc messaging systems to understand runtime behavior. These approaches can be difficult to integrate or are tightly coupled to specific environments. Runtime Reporter provides a lightweight, structured runtime event layer designed to simplify logging and messaging while remaining performant, secure, and framework-agnostic.
+
 ## Features
 
-- **Security focused**: Pass an empty message set in production to avoid exposing internal messaging.
-- **Centralized messages**: Define message text once; reference by a unique code everywhere else.
-- **Tokenized templates**: Apply runtime data to messages via templated strings and tokenized variables.
-- **Type-safe**: Autocomplete and compile-time validation for message codes and token names.
-- **Tree-shakeable**: Pass an empty message set in production to reduce your bundle size
-- **Test friendly**: Use `message()` to assert on final output without duplicating message text.
-- **Code-based messaging**: Coded messages make it easy to identify errors to perform debugging tasks.
-- **Small footprint**: Minimal bundle size (~2 KB minified) so it adds negligible weight to your app.
-- **Zero dependencies**: No runtime dependencies; the published package is fully self-contained.
-- **Scalable pattern**: Can scale to fit your specific needs regardless of your project's size.
+- **Centralized messages**: Define message text once and reference it everywhere using stable message codes.
+- **Code-based messaging**: Structured message identifiers make debugging and tracing runtime behavior easier.
+- **Security conscious**: Prevent accidental exposure of sensitive data by omitting message definitions in production.
+- **Type-safe**: Autocomplete and compile-time validation for message codes and template tokens.
+- **Tokenized templates**: Inject runtime data using structured, reusable message templates.
+- **Test friendly**: Assert against resolved messages without duplicating message text in tests.
+- **Tree-shakeable**: Ship an empty message set in production to minimize bundle size.
+- **Small footprint**: ~2 KB minified with negligible runtime overhead.
+- **Zero dependencies**: Fully self-contained with no runtime dependencies.
+- **Scales with your application**: Works equally well for small projects and large frameworks.
 
 ## Installation
 
