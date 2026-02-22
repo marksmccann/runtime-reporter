@@ -9,7 +9,7 @@
         "commitMessage": "chore(release): ${version}",
         "tagName": "v${version}"
     },
-    "npm": {
-        "publish": false
+    "hooks": {
+        "after:bump": "npx prettier --write CHANGELOG.md"
     }
 }
