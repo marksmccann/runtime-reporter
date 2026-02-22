@@ -25,25 +25,23 @@ npm install runtime-reporter
 
 ### 1) Define your messages
 
-Define the message “schema” (code + template + tokens), then create a `messages` record keyed by the codes.
+Define your messages by creating an object with the message "schema" (code + template + tokens) and keyed by their codes.
 
 ```ts
 import type { RuntimeReporterMessages } from "runtime-reporter";
 
-type MyMessages =
+const messages: RuntimeReporterMessages<
     | {
           code: "ERR01";
-          template: "{{ componentName }} failed to mount";
-          tokens: ["componentName"];
+          template: "{{ componentName }} failed at {{ phase }}";
+          tokens: "componentName" | "phase";
       }
     | {
           code: "INFO01";
           template: "Ready";
-          tokens?: undefined;
-      };
-
-const messages: RuntimeReporterMessages<MyMessages> = {
-    ERR01: "{{ componentName }} failed to mount",
+      }
+> = {
+    ERR01: "{{ componentName }} failed at {{ phase }}",
     INFO01: "Ready",
 };
 ```
@@ -66,8 +64,8 @@ export const reporter = createReporter(
 Call the various reporter methods wherever you need them.
 
 ```ts
-reporter.error("ERR01", { componentName: "MyComponent" });
-// logs: "MyComponent failed to mount (ERR01)"
+reporter.error("ERR01", { componentName: "Router", phase: "mount" });
+// logs: "Router failed at mount (ERR01)"
 
 reporter.message("INFO01");
 // returns: "Ready (INFO01)"
@@ -117,6 +115,32 @@ reporter.message("INFO01");
 // "[INFO01] Ready"
 ```
 
+### Using the reporter in production
+
+When the `createReporter` function is called in production with an empty message set, the `fail` method will use the customizable `defaultTemplate` option which defaults to "An error occurred". This message is intended to be generic so that it does not reveal sensitive information about the system, while still providing a code for debugging purposes.
+
+```ts
+const reporter = createReporter(
+    // Pass an empty object in production for better security and a smaller bundle size
+    process.env.NODE_ENV === "production" ? ({} as typeof messages) : messages
+);
+
+reporter.fail("ERR01", { componentName: "Router", phase: "mount" });
+// throws: "An error occurred (ERR01)"
+```
+
+The remaining reporter methods will not log anything in production when the code is missing from the message set.
+
+```ts
+const reporter = createReporter(
+    // Pass an empty object in production for better security and a smaller bundle size
+    process.env.NODE_ENV === "production" ? ({} as typeof messages) : messages
+);
+
+reporter.error("ERR01", { componentName: "Router", phase: "mount" });
+// does not log anything
+```
+
 ### Using `message()` in tests
 
 The `message` method returns the resolved string without side effects, allowing you to validate precise messaging without duplicating text.
@@ -137,11 +161,44 @@ describe("reporter messages", () => {
 });
 ```
 
+### Using the reporter without TypeScript
+
+You can use the reporter without TypeScript, you will just lose the type safety and autocomplete.
+
+```js
+import { createReporter } from "runtime-reporter";
+
+const reporter = createReporter({
+    ERR01: "{{ componentName }} failed at {{ phase }}",
+});
+
+reporter.error("ERR01", { componentName: "Router", phase: "mount" });
+// logs: "Router failed at mount (ERR01)"
+```
+
+However, you can still get the same benefits as TypeScript by using JSDoc-style type annotations.
+
+```js
+/**
+ * @type {import("runtime-reporter").RuntimeReporterMessages<{
+ *     code: "ERR01";
+ *     template: "{{ componentName }} failed at {{ phase }}";
+ *     tokens: "componentName" | "phase";
+ * } | {
+ *     code: "INFO01";
+ *     template: "Ready";
+ * }>}
+ */
+const messages = {
+    ERR01: "{{ componentName }} failed at {{ phase }}",
+    INFO01: "Ready",
+};
+```
+
 ### CommonJS support
 
 If needed, Common JS imports are also available.
 
 ```js
-// CJS
 const { createReporter } = require("runtime-reporter");
 ```

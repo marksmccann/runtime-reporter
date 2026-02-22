@@ -5,23 +5,28 @@ type TestMessages =
     | {
           code: "ERR01";
           template: "{{ name }} failed";
-          tokens: ["name"];
+          tokens: "name";
       }
     | {
           code: "WARN02";
           template: "Deprecated: {{ option }}";
-          tokens: ["option"];
+          tokens: "option";
       }
     | {
           code: "INFO03";
           template: "Ready";
-          tokens?: undefined;
+      }
+    | {
+          code: "ERR04";
+          template: "{{ name }} failed at {{ location }}";
+          tokens: "name" | "location";
       };
 
 const messages: RuntimeReporterMessages<TestMessages> = {
     ERR01: "{{ name }} failed",
     WARN02: "Deprecated: {{ option }}",
     INFO03: "Ready",
+    ERR04: "{{ name }} failed at {{ location }}",
 };
 
 describe("createReporter", () => {
@@ -43,6 +48,14 @@ describe("createReporter", () => {
 
             expect(reporter.message("WARN02", { option: "legacyMode" })).toBe(
                 "Deprecated: legacyMode (WARN02)"
+            );
+        });
+
+        it("substitutes all tokens in a message with multiple placeholders", () => {
+            const reporter = createReporter(messages);
+
+            expect(reporter.message("ERR04", { name: "ConfigLoader", location: "boot" })).toBe(
+                "ConfigLoader failed at boot (ERR04)"
             );
         });
 
