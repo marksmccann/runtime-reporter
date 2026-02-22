@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.0](https://github.com/marksmccann/runtime-reporter/compare/v0.3.0...v0.4.0) (2026-02-22)
+
+### Features
+
+* converted tokens type from tuple to union + improved return type of message() ([a9584a6](https://github.com/marksmccann/runtime-reporter/commit/a9584a67b755d209469aa7f27186b320fef9ef3a))
+
 ## [0.3.0](https://github.com/marksmccann/runtime-reporter/compare/v0.2.0...v0.3.0) (2026-02-22)
 
 ### Features
