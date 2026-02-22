@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.3.0](https://github.com/marksmccann/runtime-reporter/compare/v0.2.0...v0.3.0) (2026-02-22)
+
+### Features
+
+* simplify expected messages type from array to simple union ([dc9e151](https://github.com/marksmccann/runtime-reporter/commit/dc9e151b8a34896e7cccc7004ca8a1e43527736f))
+
 ## [0.2.0](https://github.com/marksmccann/runtime-reporter/compare/v0.1.0...v0.2.0) (2026-02-21)
 
 ### Features
