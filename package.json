@@ -1,6 +1,6 @@
 {
     "name": "runtime-reporter",
-    "version": "0.4.3",
+    "version": "0.4.4",
     "description": "Structured runtime reporting that is type-safe, centralized, and production-ready.",
     "type": "module",
     "main": "./dist/index.cjs",
