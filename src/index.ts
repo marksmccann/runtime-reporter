@@ -54,8 +54,8 @@ type MessageReturnType<T extends RuntimeReporterMessage, U extends T["code"]> =
         : string;
 
 /**
- * The runtime report object with all of it's associated methods; the result
- * of the primary export: `createReporter`
+ * The runtime report object with all of it's associated methods;
+ * the result of the primary export: `createReporter`
  * @private
  */
 interface RuntimeReporter<T extends RuntimeReporterMessage> {
@@ -120,6 +120,10 @@ interface RuntimeReporter<T extends RuntimeReporterMessage> {
     fail<U extends T["code"]>(code: U, ...args: ReporterTokensArgs<T, U>): void;
 }
 
+/**
+ * The configuration options for createReporter()
+ * @since v0.1.0
+ */
 export interface RuntimeReporterOptions {
     /**
      * A hook to format the message text universally. By default, it
@@ -145,6 +149,7 @@ export interface RuntimeReporterOptions {
  * @param template The template string for the reported message
  * @param tokens The token names and values for the instance
  * @returns The resolved message text; returns an empty string if the template is falsy
+ * @private
  */
 const resolveTemplate = function resolveTemplate(
     template: string,
@@ -165,10 +170,11 @@ const resolveTemplate = function resolveTemplate(
 };
 
 /**
- * Creates a reporter object with various helpful runtime methods
+ * Creates a new runtime reporter object with all of it's associated methods
  * @param messages The messages record organized by code and template
  * @param options Optional configuration options
  * @returns A runtime report object
+ * @since v0.1.0
  */
 export function createReporter<T extends RuntimeReporterMessage>(
     messages: RuntimeReporterMessages<T>,

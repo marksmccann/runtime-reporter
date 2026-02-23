@@ -36,7 +36,7 @@ Getting started is easy. Create a reporter instance with your messages and start
 import { createReporter } from "runtime-reporter";
 
 const reporter = createReporter({
-    ERR01: "MyComponent failed at mount",
+    ERR01: "MyComponent failed to mount",
 });
 
 reporter.error("ERR01");
@@ -47,10 +47,10 @@ reporter.error("ERR01");
 Replace inline strings with centralized, code-based identifiers.
 
 ```ts
-// Without runtime-reporter (logs "MyComponent failed at mount")
-console.error("MyComponent failed at mount");
+// Without runtime-reporter (logs "MyComponent failed to mount")
+console.error("MyComponent failed to mount");
 
-// With runtime-reporter (logs "MyComponent failed at mount (ERR01)")
+// With runtime-reporter (logs "MyComponent failed to mount (ERR01)")
 reporter.error("ERR01");
 ```
 
@@ -73,22 +73,27 @@ Annotate your messages to get autocomplete and compile-time validation for messa
 ```ts
 const messages: RuntimeReporterMessages<{
     code: "ERR01";
-    template: "{{ componentName }} failed at {{ phase }}";
-    tokens: "componentName" | "phase";
+    template: "{{ componentName }} failed to mount";
+    tokens: "componentName";
 }> = {
-    ERR01: "{{ componentName }} failed at {{ phase }}",
+    ERR01: "{{ componentName }} failed to mount",
 };
 
 const reporter = createReporter(messages);
 
-reporter.error("ERR01", { componentName: "MyComponent", phase: "mount" }); // ✅ Autocomplete
-reporter.error("ERR01", { componentName: "MyComponent" }); // ❌ TypeScript Error: "phase" is required
-reporter.error("ERR02", { componentName: "MyComponent", phase: "mount" }); // ❌ TypeScript Error: "ERR02" is not a valid message code
+// ✅ Autocomplete
+reporter.error("ERR01", { componentName: "MyComponent" });
+
+// ❌ TypeScript Error: "ERR02" is not a valid message code
+reporter.error("ERR02", { componentName: "MyComponent" });
+
+// ❌ TypeScript Error: "componentName" token is required
+reporter.error("ERR01");
 ```
 
-### Production builds
+### Production environments
 
-Pass an empty object to the `createReporter` function in production for better security and a smaller bundle size.
+Pass an empty object to the `createReporter` function in production environments for better security and a smaller bundle size.
 
 ```ts
 const reporter = createReporter(
@@ -107,7 +112,7 @@ it("should log error if component fails to mount", () => {
     render(<MyComponent />);
 
     expect(console.error).toHaveBeenCalledWith(
-        reporter.message("ERR01", { componentName: "MyComponent", phase: "mount" })
+        reporter.message("ERR01", { componentName: "MyComponent" })
     );
 });
 ```
@@ -130,16 +135,22 @@ import { createReporter, type RuntimeReporterMessages } from "runtime-reporter";
 const messages: RuntimeReporterMessages<
     | {
           code: "ERR01";
-          template: "{{ componentName }} failed at {{ phase }}";
-          tokens: "componentName" | "phase";
+          template: "{{ componentName }} failed to mount";
+          tokens: "componentName";
       }
     | {
           code: "ERR02";
           template: "Failed to load configuration";
       }
+    | {
+          code: "ERR03";
+          template: "Failed to fetch {{ resource }} from {{ url }}";
+          tokens: "resource" | "url";
+      }
 > = {
-    ERR01: "{{ componentName }} failed at {{ phase }}",
+    ERR01: "{{ componentName }} failed to mount",
     ERR02: "Failed to load configuration",
+    ERR03: "Failed to fetch {{ resource }} from {{ url }}",
 };
 
 /** The runtime reporter for <project-name> */
@@ -148,7 +159,7 @@ const reporter = createReporter(messages);
 export default reporter;
 ```
 
-Once your project's reporter is created, you can import and use it wherever you need it.
+Once your project's reporter is created, you can import and use it wherever you need it like this:
 
 ```ts
 // src/my-component.ts
@@ -204,34 +215,21 @@ const reporter = createReporter(messages, {
     formatMessage: (msg, code) => `[${code}] ${msg}`,
 });
 
-reporter.message("INFO01");
-// "[INFO01] Ready"
+reporter.message("ERR01", { componentName: "MyComponent" });
+// "[ERR01] MyComponent failed to mount"
 ```
 
-### Using the reporter in production
+### Calling `fail()` in production
 
-When the `createReporter` function is called in production with an empty message set, the `fail` method will use the customizable `defaultTemplate` option which defaults to "An error occurred". This message is intended to be generic so that it does not reveal sensitive information about the system, while still providing a code for debugging purposes.
+When the `createReporter` function provided an empty message set in production, the `fail` method will use the customizable `defaultTemplate` option which defaults to "An error occurred". This message is intended to be generic so that it does not reveal sensitive information about the system, while still providing a code for debugging purposes.
 
 ```ts
 const reporter = createReporter(
-    // Pass an empty object in production for better security and a smaller bundle size
     process.env.NODE_ENV === "production" ? ({} as typeof messages) : messages
 );
 
 reporter.fail("ERR01", { componentName: "Router", phase: "mount" });
 // throws: "An error occurred (ERR01)"
-```
-
-The remaining reporter methods will not log anything in production when the code is missing from the message set.
-
-```ts
-const reporter = createReporter(
-    // Pass an empty object in production for better security and a smaller bundle size
-    process.env.NODE_ENV === "production" ? ({} as typeof messages) : messages
-);
-
-reporter.error("ERR01", { componentName: "Router", phase: "mount" });
-// does not log anything
 ```
 
 ### Using `message()` in tests
