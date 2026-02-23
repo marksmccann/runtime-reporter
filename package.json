@@ -1,7 +1,7 @@
 {
     "name": "runtime-reporter",
     "version": "0.4.6",
-    "description": "Replace ad-hoc logging with structured, code-based messaging that is also type-safe, centralized, and production-ready",
+    "description": "Replace ad-hoc logging with structured, code-based messaging",
     "type": "module",
     "main": "./dist/index.cjs",
     "module": "./dist/index.js",

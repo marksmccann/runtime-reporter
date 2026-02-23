@@ -1,6 +1,8 @@
 # Runtime Reporter
 
-Replace ad-hoc logging with structured, code-based messaging that is also type-safe, centralized, and production-ready.
+Replace ad-hoc logging with structured, code-based messaging.
+
+Runtime Reporter provides centralized, type-safe reporting that is convenient in development and secure in production.
 
 ```ts
 // ./src/runtime-reporter.ts
@@ -42,7 +44,10 @@ in a lightweight, self-contained package (less than 1 KB gzipped).
 
 ## Who is this for?
 
-Runtime Reporter is ideal for front-end frameworks and libraries. However, it is ultimately useful for any project looking for standardized console messaging.
+- Front-end frameworks and libraries
+- Projects that need stable error codes
+- Teams replacing custom logging systems
+- Projects that want safer production output
 
 ## Installation
 
