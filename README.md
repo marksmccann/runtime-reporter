@@ -1,121 +1,26 @@
 # Runtime Reporter
 
-Structured runtime reporting that is type-safe, centralized, and production-ready — for frameworks and applications
+Structured runtime reporting that is type-safe, centralized, and production-ready — for front-end frameworks and applications.
 
-## Why Runtime Reporter?
+Runtime Reporter replaces ad-hoc logging with structured, code-based messaging.
 
-Most projects eventually accumulate:
+## Why?
+
+Runtime Reporter solves these problems:
 
 - duplicated log messages
 - inconsistent error wording
 - fragile test assertions
 - accidental exposure of sensitive data
 
-Runtime Reporter replaces ad-hoc logging with structured, code-based messaging.
+by introducing these features:
 
-## Who is Runtime Reporter for?
+- centralized and standardized error messaging
+- stable error codes for debugging and error tracking
+- test assertions without string duplication
+- safer production output (no sensitive data exposure)
 
-Use Runtime Reporter if:
-
-- you're building a framework or library
-- you want to avoid exposing sensitive information in production
-- you want stable error codes for debugging and tracing runtime behavior
-- you want to avoid bloat from verbose console messages
-- you want a lightweight tool (~2 KB minified) that is easy to use
-- you want to avoid duplicating message text in tests
-
-## Features
-
-If you are new to Runtime Reporter, take a moment to explore the its core features.
-
-### Basic usage
-
-Getting started is easy. Create a reporter instance with your messages and start logging.
-
-```ts
-import { createReporter } from "runtime-reporter";
-
-const reporter = createReporter({
-    ERR01: "MyComponent failed to mount",
-});
-
-reporter.error("ERR01");
-```
-
-### Code-based messaging
-
-Replace inline strings with centralized, code-based identifiers.
-
-```ts
-// Without runtime-reporter (logs "MyComponent failed to mount")
-console.error("MyComponent failed to mount");
-
-// With runtime-reporter (logs "MyComponent failed to mount (ERR01)")
-reporter.error("ERR01");
-```
-
-### Dynamic messages
-
-Inject runtime data into your messages via message templates and tokenized variables.
-
-```ts
-const reporter = createReporter({
-    ERR01: "{{ componentName }} failed to mount",
-});
-
-reporter.error("ERR01", { componentName: "MyComponent" });
-```
-
-### Type safety
-
-Annotate your messages to get autocomplete and compile-time validation for message codes and token names.
-
-```ts
-const messages: RuntimeReporterMessages<{
-    code: "ERR01";
-    template: "{{ componentName }} failed to mount";
-    tokens: "componentName";
-}> = {
-    ERR01: "{{ componentName }} failed to mount",
-};
-
-const reporter = createReporter(messages);
-
-// ✅ Autocomplete
-reporter.error("ERR01", { componentName: "MyComponent" });
-
-// ❌ TypeScript Error: "ERR02" is not a valid message code
-reporter.error("ERR02", { componentName: "MyComponent" });
-
-// ❌ TypeScript Error: "componentName" token is required
-reporter.error("ERR01");
-```
-
-### Production environments
-
-Pass an empty object to the `createReporter` function in production environments for better security and a smaller bundle size.
-
-```ts
-const reporter = createReporter(
-    process.env.NODE_ENV === "production" ? ({} as typeof messages) : messages
-);
-```
-
-### Test friendly
-
-Assert against resolved messages without duplicating message text in your test environment.
-
-```ts
-it("should log error if component fails to mount", () => {
-    vi.spyOn(console, "error").mockImplementation(() => {});
-
-    render(<MyComponent />);
-
-    expect(console.error).toHaveBeenCalledWith(
-        reporter.message("ERR01", { componentName: "MyComponent" })
-    );
-});
-```
+in a lightweight, self-contained package (less than 1 KB).
 
 ## Installation
 
@@ -159,7 +64,7 @@ const reporter = createReporter(messages);
 export default reporter;
 ```
 
-Once your project's reporter is created, you can import and use it wherever you need it like this:
+Once your reporter is created, import and use it wherever you want:
 
 ```ts
 // src/my-component.ts
@@ -175,11 +80,104 @@ export function MyComponent() {
 }
 ```
 
+## Features
+
+If you are new to Runtime Reporter, take a moment to explore its core features.
+
+### 1. Basic usage
+
+Create a reporter instance with your messages and start logging.
+
+```ts
+import { createReporter } from "runtime-reporter";
+
+const reporter = createReporter({
+    ERR01: "MyComponent failed to mount",
+});
+
+reporter.error("ERR01");
+```
+
+### 2. Code-based messaging
+
+Replace inline strings with centralized, code-based identifiers.
+
+```ts
+// Without runtime-reporter (logs "MyComponent failed to mount")
+console.error("MyComponent failed to mount");
+
+// With runtime-reporter (logs "MyComponent failed to mount (ERR01)")
+reporter.error("ERR01");
+```
+
+### 3. Dynamic messages
+
+Inject runtime data into your messages via message templates and tokenized variables.
+
+```ts
+const reporter = createReporter({
+    ERR01: "{{ componentName }} failed to mount",
+});
+
+reporter.error("ERR01", { componentName: "MyComponent" });
+```
+
+### 4. Type safety
+
+Annotate your messages to get autocomplete and compile-time validation for message codes and token names.
+
+```ts
+const messages: RuntimeReporterMessages<{
+    code: "ERR01";
+    template: "{{ componentName }} failed to mount";
+    tokens: "componentName";
+}> = {
+    ERR01: "{{ componentName }} failed to mount",
+};
+
+const reporter = createReporter(messages);
+
+// ✅ Autocomplete
+reporter.error("ERR01", { componentName: "MyComponent" });
+
+// ❌ TypeScript Error: "ERR02" is not a valid message code
+reporter.error("ERR02", { componentName: "MyComponent" });
+
+// ❌ TypeScript Error: "componentName" token is required
+reporter.error("ERR01");
+```
+
+### 5. Production environments
+
+Pass an empty object to the `createReporter` function in production environments for better security and a smaller bundle size.
+
+```ts
+const reporter = createReporter(
+    process.env.NODE_ENV === "production" ? ({} as typeof messages) : messages
+);
+```
+
+### 6. Test friendly
+
+Assert against resolved messages without duplicating message text in your test environment.
+
+```ts
+it("should log error if component fails to mount", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    render(<MyComponent />);
+
+    expect(console.error).toHaveBeenCalledWith(
+        reporter.message("ERR01", { componentName: "MyComponent" })
+    );
+});
+```
+
 ## API
 
 ### `createReporter(RuntimeReporterMessages, options?: RuntimeReporterOptions): RuntimeReporter`
 
-Takes a list of messages, an optional set of configuration options, and returns a reporter object.
+Takes a messages object, an optional set of configuration options, and returns a reporter object.
 
 ### `RuntimeReporter`
 
@@ -268,7 +266,7 @@ You can still get the same benefits as TypeScript by using JSDoc-style type anno
  * }>}
  */
 const messages = {
-    ERR01: "{{ componentName }} failed at {{ phase }}",
+    ERR01: "{{ componentName }} failed to mount",
     ERR02: "Failed to load configuration",
     ERR03: "Failed to fetch {{ resource }} from {{ url }}",
 };
