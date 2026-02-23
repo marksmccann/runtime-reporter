@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.3](https://github.com/marksmccann/runtime-reporter/compare/v0.4.2...v0.4.3) (2026-02-23)
+
+### Bug Fixes
+
+* add missing type annotation tags to some exports ([7314283](https://github.com/marksmccann/runtime-reporter/commit/7314283e231ed01d2d6fe5cace0bcb3ec01e57d6))
+
 ## [0.4.2](https://github.com/marksmccann/runtime-reporter/compare/v0.4.1...v0.4.2) (2026-02-23)
 
 ## [0.4.1](https://github.com/marksmccann/runtime-reporter/compare/v0.4.0...v0.4.1) (2026-02-22)
