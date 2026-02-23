@@ -1,21 +1,116 @@
 # Runtime Reporter
 
-Structured runtime events for applications and frameworks. A composable foundation for logging, messaging, and runtime reporting.
+Structured runtime reporting that is type-safe, centralized, and production-ready — for frameworks and applications
 
-Modern applications often rely on complex logging solutions or ad-hoc messaging systems to understand runtime behavior. These approaches can be difficult to integrate or are tightly coupled to specific environments. Runtime Reporter provides a lightweight, structured runtime event layer designed to simplify logging and messaging while remaining performant, secure, and framework-agnostic.
+## Why Runtime Reporter?
+
+Most projects eventually accumulate:
+
+- duplicated log messages
+- inconsistent error wording
+- fragile test assertions
+- accidental exposure of sensitive data
+
+Runtime Reporter replaces ad-hoc logging with structured, code-based messaging.
+
+## Who is Runtime Reporter for?
+
+Use Runtime Reporter if:
+
+- you're building a framework or library
+- you want to avoid exposing sensitive information in production
+- you want stable error codes for debugging and tracing runtime behavior
+- you want to avoid bloat from verbose console messages
+- you want a lightweight tool (~2 KB minified) that is easy to use
+- you want to avoid duplicating message text in tests
 
 ## Features
 
-- **Centralized messages**: Define message text once and reference it everywhere using stable message codes.
-- **Code-based messaging**: Structured message identifiers make debugging and tracing runtime behavior easier.
-- **Security conscious**: Prevent accidental exposure of sensitive data by omitting message definitions in production.
-- **Type-safe**: Autocomplete and compile-time validation for message codes and template tokens.
-- **Tokenized templates**: Inject runtime data using structured, reusable message templates.
-- **Test friendly**: Assert against resolved messages without duplicating message text in tests.
-- **Tree-shakeable**: Ship an empty message set in production to minimize bundle size.
-- **Small footprint**: ~2 KB minified with negligible runtime overhead.
-- **Zero dependencies**: Fully self-contained with no runtime dependencies.
-- **Scales with your application**: Works equally well for small projects and large frameworks.
+If you are new to Runtime Reporter, take a moment to explore the its core features.
+
+### Basic usage
+
+Getting started is easy. Create a reporter instance with your messages and start logging.
+
+```ts
+import { createReporter } from "runtime-reporter";
+
+const reporter = createReporter({
+    ERR01: "MyComponent failed at mount",
+});
+
+reporter.error("ERR01");
+```
+
+### Code-based messaging
+
+Replace inline strings with centralized, code-based identifiers.
+
+```ts
+// Without runtime-reporter (logs "MyComponent failed at mount")
+console.error("MyComponent failed at mount");
+
+// With runtime-reporter (logs "MyComponent failed at mount (ERR01)")
+reporter.error("ERR01");
+```
+
+### Dynamic messages
+
+Inject runtime data into your messages via message templates and tokenized variables.
+
+```ts
+const reporter = createReporter({
+    ERR01: "{{ componentName }} failed at {{ phase }}",
+});
+
+reporter.error("ERR01", { componentName: "MyComponent", phase: "mount" });
+```
+
+### Type safety
+
+Annotate your messages to get autocomplete and compile-time validation for message codes and token names.
+
+```ts
+const messages: RuntimeReporterMessages<{
+    code: "ERR01";
+    template: "{{ componentName }} failed at {{ phase }}";
+    tokens: "componentName" | "phase";
+}> = {
+    ERR01: "{{ componentName }} failed at {{ phase }}",
+};
+
+const reporter = createReporter(messages);
+
+reporter.error("ERR01", { componentName: "MyComponent", phase: "mount" }); // ✅ Autocomplete
+reporter.error("ERR01", { componentName: "MyComponent" }); // ❌ TypeScript Error: "phase" is required
+reporter.error("ERR02", { componentName: "MyComponent", phase: "mount" }); // ❌ TypeScript Error: "ERR02" is not a valid message code
+```
+
+### Production builds
+
+Pass an empty object to the `createReporter` function in production for better security and a smaller bundle size.
+
+```ts
+const reporter = createReporter(
+    process.env.NODE_ENV === "production" ? ({} as typeof messages) : messages
+);
+```
+
+### Test friendly
+
+Assert against resolved messages without duplicating message text in your test environment.
+
+```ts
+it("should log error if component fails to mount", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+
+    render(<MyComponent />);
+
+    expect(console.error).toHaveBeenCalledWith(
+        reporter.message("ERR01", { componentName: "MyComponent", phase: "mount" })
+    );
+});
+```
 
 ## Installation
 
@@ -23,14 +118,14 @@ Modern applications often rely on complex logging solutions or ad-hoc messaging 
 npm install runtime-reporter
 ```
 
-## Usage
+## Quick start
 
-### 1) Define your messages
-
-Define your messages by creating an object with the message "schema" (code + template + tokens) and keyed by their codes.
+A copy-and-paste example of how to use Runtime Reporter in your project.
 
 ```ts
-import type { RuntimeReporterMessages } from "runtime-reporter";
+// src/runtime-reporter.ts
+
+import { createReporter, type RuntimeReporterMessages } from "runtime-reporter";
 
 const messages: RuntimeReporterMessages<
     | {
@@ -39,38 +134,34 @@ const messages: RuntimeReporterMessages<
           tokens: "componentName" | "phase";
       }
     | {
-          code: "INFO01";
-          template: "Ready";
+          code: "ERR02";
+          template: "Failed to load configuration";
       }
 > = {
     ERR01: "{{ componentName }} failed at {{ phase }}",
-    INFO01: "Ready",
+    ERR02: "Failed to load configuration",
 };
+
+/** The runtime reporter for <project-name> */
+const reporter = createReporter(messages);
+
+export default reporter;
 ```
 
-### 2) Create the reporter
-
-Pass your messages to `createReporter()` to create a reporter instance.
+Once your project's reporter is created, you can import and use it wherever you need it.
 
 ```ts
-import { createReporter } from "runtime-reporter";
+// src/my-component.ts
 
-export const reporter = createReporter(
-    // Pass an empty object in production for better security and a smaller bundle size
-    process.env.NODE_ENV === "production" ? ({} as typeof messages) : messages
-);
-```
+import { reporter } from "./runtime-reporter";
 
-### 3) Use the reporter
+export function MyComponent() {
+    useEffect(() => {
+        reporter.error("ERR01", { componentName: "MyComponent", phase: "mount" });
+    }, []);
 
-Call the various reporter methods wherever you need them.
-
-```ts
-reporter.error("ERR01", { componentName: "Router", phase: "mount" });
-// logs: "Router failed at mount (ERR01)"
-
-reporter.message("INFO01");
-// returns: "Ready (INFO01)"
+    return <div>My Component</div>;
+}
 ```
 
 ## API
@@ -148,37 +239,20 @@ reporter.error("ERR01", { componentName: "Router", phase: "mount" });
 The `message` method returns the resolved string without side effects, allowing you to validate precise messaging without duplicating text.
 
 ```ts
-import { describe, it, expect, vi } from "vitest";
-import { reporter } from "./reporter";
+it("should log error if component fails to mount", () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
 
-describe("reporter messages", () => {
-    it("consoles error ERR01 correctly", () => {
-        vi.spyOn(console, "error").mockImplementation(() => {});
-        reporter.error("ERR01", { componentName: "Widget" });
+    render(<MyComponent />);
 
-        expect(console.error).toHaveBeenCalledWith(
-            reporter.message("ERR01", { componentName: "Widget" })
-        );
-    });
+    expect(console.error).toHaveBeenCalledWith(
+        reporter.message("ERR01", { componentName: "MyComponent", phase: "mount" })
+    );
 });
 ```
 
-### Using the reporter without TypeScript
+### Type safety without TypeScript
 
-You can use the reporter without TypeScript, you will just lose the type safety and autocomplete.
-
-```js
-import { createReporter } from "runtime-reporter";
-
-const reporter = createReporter({
-    ERR01: "{{ componentName }} failed at {{ phase }}",
-});
-
-reporter.error("ERR01", { componentName: "Router", phase: "mount" });
-// logs: "Router failed at mount (ERR01)"
-```
-
-However, you can still get the same benefits as TypeScript by using JSDoc-style type annotations.
+You can still get the same benefits as TypeScript by using JSDoc-style type annotations.
 
 ```js
 /**
