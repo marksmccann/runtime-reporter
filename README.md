@@ -1,8 +1,26 @@
 # Runtime Reporter
 
-Structured runtime reporting that is type-safe, centralized, and production-ready — for front-end frameworks and applications.
+Replace ad-hoc logging with structured, code-based messaging that is also type-safe, centralized, and production-ready.
 
-Runtime Reporter replaces ad-hoc logging with structured, code-based messaging.
+```ts
+// ./src/runtime-reporter.ts
+
+import { createReporter } from "runtime-reporter";
+
+export const reporter = createReporter({
+    ERR01: "Something went wrong",
+});
+
+// ./src/MyComponent.ts
+
+import { reporter } from "./runtime-reporter";
+
+export function MyComponent() {
+    useEffect(() => {
+        reporter.error("ERR01");
+    }, []);
+}
+```
 
 ## Why?
 
@@ -20,7 +38,11 @@ by introducing these features:
 - test assertions without string duplication
 - safer production output (no sensitive data exposure)
 
-in a lightweight, self-contained package (less than 1 KB).
+in a lightweight, self-contained package (less than 1 KB gzipped).
+
+## Who is this for?
+
+Runtime Reporter is ideal for front-end frameworks and libraries. However, it is ultimately useful for any project looking for standardized console messaging.
 
 ## Installation
 
@@ -30,11 +52,9 @@ npm install runtime-reporter
 
 ## Quick start
 
-A copy-and-paste example of how to use Runtime Reporter in your project.
+A full, copy-and-paste example of how to use Runtime Reporter in your project:
 
 ```ts
-// src/runtime-reporter.ts
-
 import { createReporter, type RuntimeReporterMessages } from "runtime-reporter";
 
 const messages: RuntimeReporterMessages<
@@ -64,53 +84,25 @@ const reporter = createReporter(messages);
 export default reporter;
 ```
 
-Once your reporter is created, import and use it wherever you want:
-
-```ts
-// src/my-component.ts
-
-import { reporter } from "./runtime-reporter";
-
-export function MyComponent() {
-    useEffect(() => {
-        reporter.error("ERR01", { componentName: "MyComponent" });
-    }, []);
-
-    return <div>My Component</div>;
-}
-```
-
 ## Features
 
 If you are new to Runtime Reporter, take a moment to explore its core features.
 
-### 1. Basic usage
-
-Create a reporter instance with your messages and start logging.
-
-```ts
-import { createReporter } from "runtime-reporter";
-
-const reporter = createReporter({
-    ERR01: "MyComponent failed to mount",
-});
-
-reporter.error("ERR01");
-```
-
-### 2. Code-based messaging
+### 1. Code-based messaging
 
 Replace inline strings with centralized, code-based identifiers.
 
 ```ts
-// Without runtime-reporter (logs "MyComponent failed to mount")
-console.error("MyComponent failed to mount");
+// Without runtime-reporter
+console.log("Something went wrong");
+// ❌ Logs: "Something went wrong"
 
-// With runtime-reporter (logs "MyComponent failed to mount (ERR01)")
-reporter.error("ERR01");
+// With runtime-reporter
+reporter.log("ERR01");
+// ✅ Logs: "Something went wrong (ERR01)"
 ```
 
-### 3. Dynamic messages
+### 2. Dynamic messages
 
 Inject runtime data into your messages via message templates and tokenized variables.
 
@@ -120,6 +112,29 @@ const reporter = createReporter({
 });
 
 reporter.error("ERR01", { componentName: "MyComponent" });
+// Logs: "MyComponent failed to mount (ERR01)"
+```
+
+### 3. Development vs. production
+
+Pass an empty object to the `createReporter` function in production environments for better security and a smaller bundle size.
+
+```ts
+const reporter = createReporter(
+    process.env.NODE_ENV === "production" ? ({} as typeof messages) : messages
+);
+```
+
+Development environments get detailed messaging, while production environments get as little as possible.
+
+```ts
+reporter.error("ERR01");
+// In development, it logs: "Something went wrong (ERR01)"
+// In production, it does not log
+
+reporter.fail("ERR01");
+// In development, it throws: "Something went wrong (ERR01)"
+// In production, it throws: "An error occurred (ERR01)"
 ```
 
 ### 4. Type safety
@@ -147,17 +162,7 @@ reporter.error("ERR02", { componentName: "MyComponent" });
 reporter.error("ERR01");
 ```
 
-### 5. Production environments
-
-Pass an empty object to the `createReporter` function in production environments for better security and a smaller bundle size.
-
-```ts
-const reporter = createReporter(
-    process.env.NODE_ENV === "production" ? ({} as typeof messages) : messages
-);
-```
-
-### 6. Test friendly
+### 5. Test friendly
 
 Assert against resolved messages without duplicating message text in your test environment.
 
