@@ -60,10 +60,10 @@ Inject runtime data into your messages via message templates and tokenized varia
 
 ```ts
 const reporter = createReporter({
-    ERR01: "{{ componentName }} failed at {{ phase }}",
+    ERR01: "{{ componentName }} failed to mount",
 });
 
-reporter.error("ERR01", { componentName: "MyComponent", phase: "mount" });
+reporter.error("ERR01", { componentName: "MyComponent" });
 ```
 
 ### Type safety
@@ -168,7 +168,7 @@ import { reporter } from "./runtime-reporter";
 
 export function MyComponent() {
     useEffect(() => {
-        reporter.error("ERR01", { componentName: "MyComponent", phase: "mount" });
+        reporter.error("ERR01", { componentName: "MyComponent" });
     }, []);
 
     return <div>My Component</div>;
@@ -228,7 +228,7 @@ const reporter = createReporter(
     process.env.NODE_ENV === "production" ? ({} as typeof messages) : messages
 );
 
-reporter.fail("ERR01", { componentName: "Router", phase: "mount" });
+reporter.fail("ERR01", { componentName: "Router" });
 // throws: "An error occurred (ERR01)"
 ```
 
@@ -243,7 +243,7 @@ it("should log error if component fails to mount", () => {
     render(<MyComponent />);
 
     expect(console.error).toHaveBeenCalledWith(
-        reporter.message("ERR01", { componentName: "MyComponent", phase: "mount" })
+        reporter.message("ERR01", { componentName: "MyComponent" })
     );
 });
 ```
@@ -256,16 +256,21 @@ You can still get the same benefits as TypeScript by using JSDoc-style type anno
 /**
  * @type {import("runtime-reporter").RuntimeReporterMessages<{
  *     code: "ERR01";
- *     template: "{{ componentName }} failed at {{ phase }}";
- *     tokens: "componentName" | "phase";
+ *     template: "{{ componentName }} failed to mount";
+ *     tokens: "componentName";
  * } | {
- *     code: "INFO01";
- *     template: "Ready";
+ *     code: "ERR02";
+ *     template: "Failed to load configuration";
+ * } | {
+ *     code: "ERR03";
+ *     template: "Failed to fetch {{ resource }} from {{ url }}";
+ *     tokens: "resource" | "url";
  * }>}
  */
 const messages = {
     ERR01: "{{ componentName }} failed at {{ phase }}",
-    INFO01: "Ready",
+    ERR02: "Failed to load configuration",
+    ERR03: "Failed to fetch {{ resource }} from {{ url }}",
 };
 ```
 
