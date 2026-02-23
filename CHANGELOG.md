@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.4.7](https://github.com/marksmccann/runtime-reporter/compare/v0.4.6...v0.4.7) (2026-02-23)
+
 ## [0.4.6](https://github.com/marksmccann/runtime-reporter/compare/v0.4.5...v0.4.6) (2026-02-23)
 
 ## [0.4.5](https://github.com/marksmccann/runtime-reporter/compare/v0.4.4...v0.4.5) (2026-02-23)
