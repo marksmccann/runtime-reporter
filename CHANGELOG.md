@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.4.8](https://github.com/marksmccann/runtime-reporter/compare/v0.4.7...v0.4.8) (2026-02-25)
+
+### Bug Fixes
+
+* correct return type for the fail method ([2eb63d7](https://github.com/marksmccann/runtime-reporter/commit/2eb63d7ee24523a34b157c02c4783245c83684d1))
+
 ## [0.4.7](https://github.com/marksmccann/runtime-reporter/compare/v0.4.6...v0.4.7) (2026-02-23)
 
 ## [0.4.6](https://github.com/marksmccann/runtime-reporter/compare/v0.4.5...v0.4.6) (2026-02-23)
