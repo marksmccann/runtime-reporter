@@ -113,11 +113,11 @@ interface RuntimeReporter<T extends RuntimeReporterMessage> {
      * Throws an error with the full text of the targeted message in all environments
      *
      * _Note: When the `createReporter` function is called in production with an empty
-     * message set, this method will use the "defaultTemplate" option in this format: "<defaultTemplate> (<code>)"_
+     * message set, this method will use the "defaultTemplate" option in this format: "&lt;defaultTemplate> (&lt;code>)"_
      * @param code A direct reference to the unique code for the targeted message
      * @param args The remaining optional argument for the function; a record containing the placeholder token values
      */
-    fail<U extends T["code"]>(code: U, ...args: ReporterTokensArgs<T, U>): void;
+    fail<U extends T["code"]>(code: U, ...args: ReporterTokensArgs<T, U>): never;
 }
 
 /**
@@ -127,7 +127,7 @@ interface RuntimeReporter<T extends RuntimeReporterMessage> {
 export interface RuntimeReporterOptions {
     /**
      * A hook to format the message text universally. By default, it
-     * outputs the message in the following format: "<message> (<code>)"
+     * outputs the message in the following format: "&lt;message> (&lt;code>)"
      * @param message The resolved message text; the placeholders have been replaced by their token values
      * @param code The unique code associated with the message
      * @returns The final, fully formatted message

@@ -5,7 +5,7 @@ Replace ad-hoc logging with structured, code-based messaging.
 Runtime Reporter provides centralized, type-safe reporting that is convenient in development and secure in production.
 
 ```ts
-// ./src/runtime-reporter.ts
+// ./src/my-reporter.ts
 
 import { createReporter } from "runtime-reporter";
 
@@ -15,7 +15,7 @@ export const reporter = createReporter({
 
 // ./src/MyComponent.ts
 
-import { reporter } from "./runtime-reporter";
+import { reporter } from "./my-reporter";
 
 export function MyComponent() {
     useEffect(() => {
@@ -116,7 +116,7 @@ const reporter = createReporter({
     ERR01: "{{ componentName }} failed to mount",
 });
 
-reporter.error("ERR01", { componentName: "MyComponent" });
+reporter.warn("ERR01", { componentName: "MyComponent" });
 // Logs: "MyComponent failed to mount (ERR01)"
 ```
 
@@ -152,6 +152,7 @@ const messages: RuntimeReporterMessages<{
     template: "{{ componentName }} failed to mount";
     tokens: "componentName";
 }> = {
+    // ✅ Autocomplete
     ERR01: "{{ componentName }} failed to mount",
 };
 
@@ -236,7 +237,7 @@ const reporter = createReporter(
     process.env.NODE_ENV === "production" ? ({} as typeof messages) : messages
 );
 
-reporter.fail("ERR01", { componentName: "Router" });
+reporter.fail("ERR01");
 // throws: "An error occurred (ERR01)"
 ```
 
