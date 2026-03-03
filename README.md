@@ -116,8 +116,8 @@ const reporter = createReporter({
     ERR01: "{{ componentName }} failed to mount",
 });
 
-reporter.warn("ERR01", { componentName: "MyComponent" });
-// Logs: "MyComponent failed to mount (ERR01)"
+reporter.error("ERR01", { componentName: "MyComponent" });
+// ✅ Logs: "MyComponent failed to mount (ERR01)"
 ```
 
 ### 3. Development vs. production
@@ -134,12 +134,12 @@ Development environments get detailed messaging, while production environments g
 
 ```ts
 reporter.error("ERR01");
-// In development, it logs: "Something went wrong (ERR01)"
-// In production, it does not log
+// ✅ In development, it logs: "Something went wrong (ERR01)"
+// ✅ In production, it does not log
 
 reporter.fail("ERR01");
-// In development, it throws: "Something went wrong (ERR01)"
-// In production, it throws: "An error occurred (ERR01)"
+// ✅ In development, it throws: "Something went wrong (ERR01)"
+// ✅ In production, it throws: "An error occurred (ERR01)"
 ```
 
 ### 4. Type safety
@@ -180,8 +180,32 @@ it("should log error if component fails to mount", () => {
 
     expect(console.error).toHaveBeenCalledWith(
         reporter.message("ERR01", { componentName: "MyComponent" })
+        // ✅ Asserts: "MyComponent failed to mount (ERR01)"
     );
 });
+```
+
+### 6. Custom side effects
+
+Leverage the `onReport` hook to perform custom actions (e.g., logging to remote services) when a report is made.
+
+```ts
+const reporter = createReporter(messages, {
+    onReport: (payload) => {
+        fetch("/api/reports", {
+            method: "POST",
+            body: JSON.stringify(payload),
+        });
+    },
+});
+
+reporter.error("ERR01");
+// ✅ Sends a POST request with the following payload:
+// {
+//     code: "ERR01",
+//     message: "MyComponent failed to mount (ERR01)",
+//     level: "error",
+// }
 ```
 
 ## API
@@ -202,16 +226,25 @@ Takes a messages object, an optional set of configuration options, and returns a
 
 ### `RuntimeReporterOptions`
 
-| Property        | Type                                        | Required | Description                                                                                                                                                                                      |
-| --------------- | ------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| formatMessage   | `(message: string, code: string) => string` | No       | Customize the final output of every message. By default, messages are in the format: `"<message> (<code>)"`.                                                                                     |
-| defaultTemplate | `string`                                    | No       | Fallback message text used when the code does not exist in `messages`. Defaults to `"An error occurred"`. This is mostly relevant for `fail()` in production when you pass an empty message set. |
+| Property        | Type                                              | Required | Description                                                                                                                                                                                      |
+| --------------- | ------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| formatMessage   | `(message: string, code: string) => string`       | No       | Customize the final output of every message. By default, messages are in the format: `"<message> (<code>)"`.                                                                                     |
+| defaultTemplate | `string`                                          | No       | Fallback message text used when the code does not exist in `messages`. Defaults to `"An error occurred"`. This is mostly relevant for `fail()` in production when you pass an empty message set. |
+| onReport        | `(payload: RuntimeReporterReportPayload) => void` | No       | A hook to perform custom actions when a report is made via `error`, `warn`, `log`, or `fail`.                                                                                                    |
 
 ### `RuntimeReporterTokens`
 
 | Property | Type                   | Description                                                                                                                  |
 | -------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | `string` | `RuntimeReporterToken` | A record of token names along with their replacement value. Supported types include: `string`, `number`, `boolean`, `Error`. |
+
+### `RuntimeReporterReportPayload`
+
+| Property  | Type     | Description                                                                           |
+| --------- | -------- | ------------------------------------------------------------------------------------- | ----- | ------- | --------------------------------- |
+| `code`    | `string` | The unique code associated with the message.                                          |
+| `message` | `string` | The resolved message text; the placeholders have been replaced by their token values. |
+| `level`   | `"error" | "warn"                                                                                | "log" | "fail"` | The severity level of the report. |
 
 ## Examples
 
@@ -221,7 +254,7 @@ You can customize the format of the message by providing a custom `formatMessage
 
 ```ts
 const reporter = createReporter(messages, {
-    formatMessage: (msg, code) => `[${code}] ${msg}`,
+    formatMessage: (message, code) => `[${code}] ${message}`,
 });
 
 reporter.message("ERR01", { componentName: "MyComponent" });
@@ -255,6 +288,34 @@ it("should log error if component fails to mount", () => {
         reporter.message("ERR01", { componentName: "MyComponent" })
     );
 });
+```
+
+### Using `onReport` and `formatMessage` together
+
+By combining the `onReport` and `formatMessage` options, you can have granular control over the message output and reporting behavior. For example, you could log a generic message to users while still sending the full payload to a remote service in production environments. At the same time, you can log the full message in non-production environments for debugging purposes.
+
+```ts
+const reporter = createReporter(messages, {
+    formatMessage: (message, code) => {
+        if (process.env.NODE_ENV === "production") {
+            return "Generic error message ...";
+        } else {
+            return `${message} (${code})`;
+        }
+    },
+    onReport: (payload) => {
+        if (process.env.NODE_ENV === "production") {
+            fetch("/api/reports", {
+                method: "POST",
+                body: JSON.stringify(payload),
+            });
+        }
+    },
+});
+
+reporter.error("ERR01");
+// ✅ In production, users get a generic message AND remote service gets the full message
+// ✅ In non-production, developers get the full message
 ```
 
 ### Type safety without TypeScript

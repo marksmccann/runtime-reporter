@@ -66,6 +66,14 @@ describe("createReporter", () => {
 
             expect(reporter.message("INFO03")).toBe("[INFO03] Ready");
         });
+
+        it('should not call "onReport" when provided', () => {
+            const onReport = vi.fn();
+            const reporter = createReporter(messages, { onReport });
+            reporter.message("INFO03");
+
+            expect(onReport).not.toHaveBeenCalled();
+        });
     });
 
     describe("error(), warn(), log()", () => {
@@ -104,6 +112,42 @@ describe("createReporter", () => {
 
             expect(console.log).toHaveBeenCalledWith("Ready (INFO03)");
         });
+
+        it('should call "onReport" via "log()" when provided', () => {
+            const onReport = vi.fn();
+            const reporter = createReporter(messages, { onReport });
+            reporter.log("INFO03");
+
+            expect(onReport).toHaveBeenCalledWith({
+                code: "INFO03",
+                message: "Ready (INFO03)",
+                level: "log",
+            });
+        });
+
+        it('should call "onReport" via "warn()" when provided', () => {
+            const onReport = vi.fn();
+            const reporter = createReporter(messages, { onReport });
+            reporter.warn("WARN02", { option: "old" });
+
+            expect(onReport).toHaveBeenCalledWith({
+                code: "WARN02",
+                message: "Deprecated: old (WARN02)",
+                level: "warn",
+            });
+        });
+
+        it('should call "onReport" via "error()" when provided', () => {
+            const onReport = vi.fn();
+            const reporter = createReporter(messages, { onReport });
+            reporter.error("ERR01", { name: "X" });
+
+            expect(onReport).toHaveBeenCalledWith({
+                code: "ERR01",
+                message: "X failed (ERR01)",
+                level: "error",
+            });
+        });
     });
 
     describe("fail()", () => {
@@ -131,6 +175,21 @@ describe("createReporter", () => {
 
             // @ts-expect-error - This is a test case for the defaultTemplate
             expect(() => reporter.fail("X")).toThrow(new Error("An error occurred (X)"));
+        });
+
+        it('should call "onReport" when provided', () => {
+            const onReport = vi.fn();
+            const reporter = createReporter(messages, { onReport });
+
+            expect(() => reporter.fail("ERR01", { name: "Config" })).toThrow(
+                new Error("Config failed (ERR01)")
+            );
+
+            expect(onReport).toHaveBeenCalledWith({
+                code: "ERR01",
+                message: "Config failed (ERR01)",
+                level: "fail",
+            });
         });
     });
 });

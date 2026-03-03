@@ -121,12 +121,32 @@ interface RuntimeReporter<T extends RuntimeReporterMessage> {
 }
 
 /**
+ * The payload for the onReport hook
+ */
+export type RuntimeReporterReportPayload = {
+    /**
+     * The unique code associated with the message
+     */
+    code: string;
+
+    /**
+     * The resolved message text; the placeholders have been replaced by their token values
+     */
+    message: string;
+
+    /**
+     * The severity level of the report
+     */
+    level: "error" | "warn" | "log" | "fail";
+};
+
+/**
  * The configuration options for createReporter()
  * @since v0.1.0
  */
 export interface RuntimeReporterOptions {
     /**
-     * A hook to format the message text universally. By default, it
+     * A hook to format the message text that is logged to the console. By default, it
      * outputs the message in the following format: "&lt;message> (&lt;code>)"
      * @param message The resolved message text; the placeholders have been replaced by their token values
      * @param code The unique code associated with the message
@@ -142,6 +162,14 @@ export interface RuntimeReporterOptions {
      * environments when the `createReporter` function is provided an empty message set._
      */
     defaultTemplate?: string;
+
+    /**
+     * A hook to perform custom actions when any of the report methods (minus the
+     * `message` method) are called. This is useful for logging to a remote service,
+     * or for performing other actions based on the report.
+     * @param payload The payload for the report
+     */
+    onReport?: (payload: RuntimeReporterReportPayload) => void;
 }
 
 /**
@@ -183,6 +211,7 @@ export function createReporter<T extends RuntimeReporterMessage>(
     const {
         formatMessage = (message, code) => `${message} (${code})`,
         defaultTemplate = "An error occurred",
+        onReport,
     } = options;
     const messagesByCode = messages as Record<string, string>;
 
@@ -207,18 +236,22 @@ export function createReporter<T extends RuntimeReporterMessage>(
             getMessage(code, ...args) as MessageReturnType<T, typeof code & T["code"]>,
         error: (code, ...args) => {
             const message = getMessage(code, ...args);
+            if (onReport) onReport({ code, message, level: "error" });
             if (messagesByCode[code]) console.error(message);
         },
         warn: (code, ...args) => {
             const message = getMessage(code, ...args);
+            if (onReport) onReport({ code, message, level: "warn" });
             if (messagesByCode[code]) console.warn(message);
         },
         log: (code, ...args) => {
             const message = getMessage(code, ...args);
+            if (onReport) onReport({ code, message, level: "log" });
             if (messagesByCode[code]) console.log(message);
         },
         fail: (code, ...args) => {
             const message = getMessage(code, ...args);
+            if (onReport) onReport({ code, message, level: "fail" });
             throw new Error(message);
         },
     };
