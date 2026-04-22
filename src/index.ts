@@ -157,9 +157,6 @@ export interface RuntimeReporterOptions {
     /**
      * The default template to fallback on when a provided code does not
      * have an associated message. Defaults to "An error occurred"
-     *
-     * _Note: This is only used when the `fail` method is called in production
-     * environments when the `createReporter` function is provided an empty message set._
      */
     defaultTemplate?: string;
 

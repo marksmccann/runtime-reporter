@@ -240,11 +240,11 @@ Takes a messages object, an optional set of configuration options, and returns a
 
 ### `RuntimeReporterReportPayload`
 
-| Property  | Type     | Description                                                                           |
-| --------- | -------- | ------------------------------------------------------------------------------------- | ----- | ------- | --------------------------------- |
-| `code`    | `string` | The unique code associated with the message.                                          |
-| `message` | `string` | The resolved message text; the placeholders have been replaced by their token values. |
-| `level`   | `"error" | "warn"                                                                                | "log" | "fail"` | The severity level of the report. |
+| Property  | Type                                   | Description                                                                           |
+| --------- | -------------------------------------- | ------------------------------------------------------------------------------------- |
+| `code`    | `string`                               | The unique code associated with the message.                                          |
+| `message` | `string`                               | The resolved message text; the placeholders have been replaced by their token values. |
+| `level`   | `"error" \| "warn" \| "log" \| "fail"` | The severity level of the report.                                                     |
 
 ## Examples
 
