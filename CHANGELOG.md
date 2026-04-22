@@ -1,10 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/marksmccann/runtime-reporter/compare/v0.5.0...v0.5.1) (2026-04-22)
+
 ## [0.5.0](https://github.com/marksmccann/runtime-reporter/compare/v0.4.8...v0.5.0) (2026-03-03)
 
 ### Features
 
-* add "onReport" reporter option ([b938d30](https://github.com/marksmccann/runtime-reporter/commit/b938d30d61d95d37baa27eef22fe7fc4ab784d56))
+- add "onReport" reporter option ([b938d30](https://github.com/marksmccann/runtime-reporter/commit/b938d30d61d95d37baa27eef22fe7fc4ab784d56))
 
 ## [0.4.8](https://github.com/marksmccann/runtime-reporter/compare/v0.4.7...v0.4.8) (2026-02-25)
 
