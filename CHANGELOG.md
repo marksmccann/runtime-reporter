@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.6.0](https://github.com/marksmccann/runtime-reporter/compare/v0.5.1...v0.6.0) (2026-04-29)
+
+### ⚠ BREAKING CHANGES
+
+* The message text passed to the "onReport" payload is no longer pre-formatted. The
+placeholder tokens are still replaced but, it is not passed to the "formatMessage" hook.
+
+### Bug Fixes
+
+* prevent the "onReport" payload message from being formatted via "formatMessage" ([a2f0caf](https://github.com/marksmccann/runtime-reporter/commit/a2f0caff628a3f779a53b43d9e4d1226c598fe69))
+
 ## [0.5.1](https://github.com/marksmccann/runtime-reporter/compare/v0.5.0...v0.5.1) (2026-04-22)
 
 ## [0.5.0](https://github.com/marksmccann/runtime-reporter/compare/v0.4.8...v0.5.0) (2026-03-03)
