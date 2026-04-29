@@ -2,24 +2,22 @@
 
 Replace ad-hoc logging with structured, code-based messaging.
 
-Runtime Reporter provides centralized, type-safe reporting that is convenient in development and secure in production.
+Runtime Reporter is an extremely lightweight and self-contained package that provides centralized, type-safe runtime reporting that is convenient in development and secure in production.
 
 ```ts
 // ./src/my-reporter.ts
-
 import { createReporter } from "runtime-reporter";
 
-export const reporter = createReporter({
+export default createReporter({
     ERR01: "Something went wrong",
 });
 
 // ./src/MyComponent.ts
-
-import { reporter } from "./my-reporter";
+import myReporter from "./my-reporter";
 
 export function MyComponent() {
     useEffect(() => {
-        reporter.error("ERR01");
+        myReporter.error("ERR01");
     }, []);
 }
 ```
@@ -39,8 +37,6 @@ by introducing these features:
 - stable error codes for debugging and error tracking
 - test assertions without string duplication
 - safer production output (no sensitive data exposure)
-
-in a lightweight, self-contained package (less than 1 KB gzipped).
 
 ## Who is this for?
 
@@ -84,7 +80,9 @@ const messages: RuntimeReporterMessages<
 };
 
 /** The runtime reporter for <project-name> */
-const reporter = createReporter(messages);
+const reporter = createReporter(
+    process.env.NODE_ENV === "production" ? ({} as typeof messages) : messages
+);
 
 export default reporter;
 ```
@@ -120,7 +118,7 @@ reporter.error("ERR01", { componentName: "MyComponent" });
 // ✅ Logs: "MyComponent failed to mount (ERR01)"
 ```
 
-### 3. Development vs. production
+### 3. Production-ready
 
 Pass an empty object to the `createReporter` function in production environments for better security and a smaller bundle size.
 
@@ -203,7 +201,7 @@ reporter.error("ERR01");
 // ✅ Sends a POST request with the following payload:
 // {
 //     code: "ERR01",
-//     message: "MyComponent failed to mount (ERR01)",
+//     message: "MyComponent failed to mount",
 //     level: "error",
 // }
 ```
@@ -228,7 +226,7 @@ Takes a messages object, an optional set of configuration options, and returns a
 
 | Property        | Type                                              | Required | Description                                                                                                                                                                                      |
 | --------------- | ------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| formatMessage   | `(message: string, code: string) => string`       | No       | Customize the final output of every message. By default, messages are in the format: `"<message> (<code>)"`.                                                                                     |
+| formatMessage   | `(message: string, code: string) => string`       | No       | Customize the final output of every message. By default, messages are in the format: `"<message> (<code>)"`. This option does not affect the message provided to the `onReport` hook.            |
 | defaultTemplate | `string`                                          | No       | Fallback message text used when the code does not exist in `messages`. Defaults to `"An error occurred"`. This is mostly relevant for `fail()` in production when you pass an empty message set. |
 | onReport        | `(payload: RuntimeReporterReportPayload) => void` | No       | A hook to perform custom actions when a report is made via `error`, `warn`, `log`, or `fail`.                                                                                                    |
 
@@ -240,11 +238,11 @@ Takes a messages object, an optional set of configuration options, and returns a
 
 ### `RuntimeReporterReportPayload`
 
-| Property  | Type                                   | Description                                                                           |
-| --------- | -------------------------------------- | ------------------------------------------------------------------------------------- |
-| `code`    | `string`                               | The unique code associated with the message.                                          |
-| `message` | `string`                               | The resolved message text; the placeholders have been replaced by their token values. |
-| `level`   | `"error" \| "warn" \| "log" \| "fail"` | The severity level of the report.                                                     |
+| Property  | Type                                   | Description                                                                                                                                        |
+| --------- | -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `code`    | `string`                               | The unique code associated with the message.                                                                                                       |
+| `message` | `string`                               | The resolved message text; the placeholders have been replaced by their token values but, it has not been formatted by the `formatMessage` option. |
+| `level`   | `"error" \| "warn" \| "log" \| "fail"` | The severity level of the report.                                                                                                                  |
 
 ## Examples
 

@@ -120,7 +120,7 @@ describe("createReporter", () => {
 
             expect(onReport).toHaveBeenCalledWith({
                 code: "INFO03",
-                message: "Ready (INFO03)",
+                message: "Ready",
                 level: "log",
             });
         });
@@ -132,7 +132,7 @@ describe("createReporter", () => {
 
             expect(onReport).toHaveBeenCalledWith({
                 code: "WARN02",
-                message: "Deprecated: old (WARN02)",
+                message: "Deprecated: old",
                 level: "warn",
             });
         });
@@ -144,7 +144,7 @@ describe("createReporter", () => {
 
             expect(onReport).toHaveBeenCalledWith({
                 code: "ERR01",
-                message: "X failed (ERR01)",
+                message: "X failed",
                 level: "error",
             });
         });
@@ -187,7 +187,7 @@ describe("createReporter", () => {
 
             expect(onReport).toHaveBeenCalledWith({
                 code: "ERR01",
-                message: "Config failed (ERR01)",
+                message: "Config failed",
                 level: "fail",
             });
         });

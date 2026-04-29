@@ -77,35 +77,35 @@ interface RuntimeReporter<T extends RuntimeReporterMessage> {
     ): MessageReturnType<T, U>;
 
     /**
-     * Logs a warning to the console with the full text of the targeted message in non-production environments
+     * Logs a warning to the console with the full text of the targeted message
      *
      * _Note: This method will only log when the message associated with the code is found;
      * meaning it will not be called in production if the `createReporter` function
      * is provided an empty message set._
      * @param code A direct reference to the unique code for the targeted message
-     * @param args The remaining optional argument for the function; a record containing the placeholder token values
+     * @param args A record containing the placeholder token values for the message
      */
     warn<U extends T["code"]>(code: U, ...args: ReporterTokensArgs<T, U>): void;
 
     /**
-     * Logs an error to the console with the full text of the targeted message in non-production environments
+     * Logs an error to the console with the full text of the targeted message
      *
      * _Note: This method will only log when the message associated with the code is found;
      * meaning it will not be called in production if the `createReporter` function
      * is provided an empty message set._
      * @param code A direct reference to the unique code for the targeted message
-     * @param args The remaining optional argument for the function; a record containing the placeholder token values
+     * @param args A record containing the placeholder token values for the message
      */
     error<U extends T["code"]>(code: U, ...args: ReporterTokensArgs<T, U>): void;
 
     /**
-     * Logs a message to the console with the full text of the targeted message in non-production environments
+     * Logs a message to the console with the full text of the targeted message
      *
      * _Note: This method will only log when the message associated with the code is found;
      * meaning it will not be called in production if the `createReporter` function
      * is provided an empty message set._
      * @param code A direct reference to the unique code for the targeted message
-     * @param args The remaining optional argument for the function; a record containing the placeholder token values
+     * @param args A record containing the placeholder token values for the message
      */
     log<U extends T["code"]>(code: U, ...args: ReporterTokensArgs<T, U>): void;
 
@@ -115,7 +115,7 @@ interface RuntimeReporter<T extends RuntimeReporterMessage> {
      * _Note: When the `createReporter` function is called in production with an empty
      * message set, this method will use the "defaultTemplate" option in this format: "&lt;defaultTemplate> (&lt;code>)"_
      * @param code A direct reference to the unique code for the targeted message
-     * @param args The remaining optional argument for the function; a record containing the placeholder token values
+     * @param args A record containing the placeholder token values for the message
      */
     fail<U extends T["code"]>(code: U, ...args: ReporterTokensArgs<T, U>): never;
 }
@@ -131,6 +131,7 @@ export type RuntimeReporterReportPayload = {
 
     /**
      * The resolved message text; the placeholders have been replaced by their token values
+     * but, it has not been formatted by the `formatMessage` option.
      */
     message: string;
 
@@ -147,7 +148,9 @@ export type RuntimeReporterReportPayload = {
 export interface RuntimeReporterOptions {
     /**
      * A hook to format the message text that is logged to the console. By default, it
-     * outputs the message in the following format: "&lt;message> (&lt;code>)"
+     * outputs the message in the following format: "&lt;message> (&lt;code>)".
+     *
+     * _Note: This option does not affect the message provided to the `onReport` hook._
      * @param message The resolved message text; the placeholders have been replaced by their token values
      * @param code The unique code associated with the message
      * @returns The final, fully formatted message
@@ -213,43 +216,49 @@ export function createReporter<T extends RuntimeReporterMessage>(
     const messagesByCode = messages as Record<string, string>;
 
     /**
-     * Retrieves the final message for a give code and its associated tokens
+     * Retrieves the resolved message text for a given code and its associated tokens
      * @param code The unique code associated with the message
-     * @param args The remaining optional argument for the function; a record containing the placeholder token values
-     * @returns The fully resolve message or an empty string if there was no template
+     * @param args The record containing the placeholder token values
+     * @returns The fully resolved message
      */
-    const getMessage = function getMessage(
+    const resolveMessage = function getMessage(
         code: string,
         ...args: Array<Record<string, RuntimeReporterToken>>
     ): string {
         const template = messagesByCode[code] || defaultTemplate;
         const tokens = args[0];
-        const text = resolveTemplate(template, tokens);
-        return formatMessage(text, code);
+        return resolveTemplate(template, tokens);
     };
 
     return {
-        message: (code, ...args) =>
-            getMessage(code, ...args) as MessageReturnType<T, typeof code & T["code"]>,
+        message: (code, ...args) => {
+            const message = resolveMessage(code, ...args);
+            const formattedMessage = formatMessage(message, code);
+            return formattedMessage as MessageReturnType<T, typeof code & T["code"]>;
+        },
         error: (code, ...args) => {
-            const message = getMessage(code, ...args);
+            const message = resolveMessage(code, ...args);
+            const formattedMessage = formatMessage(message, code);
             if (onReport) onReport({ code, message, level: "error" });
-            if (messagesByCode[code]) console.error(message);
+            if (messagesByCode[code]) console.error(formattedMessage);
         },
         warn: (code, ...args) => {
-            const message = getMessage(code, ...args);
+            const message = resolveMessage(code, ...args);
+            const formattedMessage = formatMessage(message, code);
             if (onReport) onReport({ code, message, level: "warn" });
-            if (messagesByCode[code]) console.warn(message);
+            if (messagesByCode[code]) console.warn(formattedMessage);
         },
         log: (code, ...args) => {
-            const message = getMessage(code, ...args);
+            const message = resolveMessage(code, ...args);
+            const formattedMessage = formatMessage(message, code);
             if (onReport) onReport({ code, message, level: "log" });
-            if (messagesByCode[code]) console.log(message);
+            if (messagesByCode[code]) console.log(formattedMessage);
         },
         fail: (code, ...args) => {
-            const message = getMessage(code, ...args);
+            const message = resolveMessage(code, ...args);
+            const formattedMessage = formatMessage(message, code);
             if (onReport) onReport({ code, message, level: "fail" });
-            throw new Error(message);
+            throw new Error(formattedMessage);
         },
     };
 }
