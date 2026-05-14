@@ -30,9 +30,9 @@ export type RuntimeReporterTokens = Record<string, RuntimeReporterToken>;
 
 /**
  * A utility type used to determine the second argument of the runtime reporter methods
- * @private
+ * @since v0.7.0
  */
-type ReporterTokensArgs<T extends RuntimeReporterMessage, U extends T["code"]> = Extract<
+export type ReporterTokensArgs<T extends RuntimeReporterMessage, U extends T["code"]> = Extract<
     T,
     { code: U }
 >["tokens"] extends infer Tokens
@@ -56,9 +56,9 @@ type MessageReturnType<T extends RuntimeReporterMessage, U extends T["code"]> =
 /**
  * The runtime report object with all of it's associated methods;
  * the result of the primary export: `createReporter`
- * @private
+ * @since v0.7.0
  */
-interface RuntimeReporter<T extends RuntimeReporterMessage> {
+export interface RuntimeReporter<T extends RuntimeReporterMessage> {
     /**
      * Retrieves the full text of the targeted message
      *

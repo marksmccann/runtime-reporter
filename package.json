@@ -1,7 +1,7 @@
 {
     "name": "runtime-reporter",
     "version": "0.6.0",
-    "description": "Replace ad-hoc logging with structured, code-based messaging",
+    "description": "A framework-agnostic, type-safe reporting library that standardizes how clients handle errors and logs.",
     "type": "module",
     "main": "./dist/index.cjs",
     "module": "./dist/index.js",

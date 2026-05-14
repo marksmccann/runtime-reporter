@@ -1,8 +1,6 @@
 # Runtime Reporter
 
-Replace ad-hoc logging with structured, code-based messaging.
-
-Runtime Reporter is an extremely lightweight and self-contained package that provides centralized, type-safe runtime reporting that is convenient in development and secure in production.
+A framework-agnostic, type-safe reporting library that standardizes how clients handle errors and logs.
 
 ```ts
 // ./src/my-reporter.ts
