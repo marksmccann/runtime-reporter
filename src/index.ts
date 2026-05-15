@@ -36,9 +36,11 @@ export type ReporterTokensArgs<T extends RuntimeReporterMessage, U extends T["co
     T,
     { code: U }
 >["tokens"] extends infer Tokens
-    ? [Tokens] extends [string]
-        ? [tokens: Record<Tokens, RuntimeReporterToken>]
-        : []
+    ? [Tokens] extends [never]
+        ? []
+        : [Tokens] extends [string]
+          ? [tokens: Record<Tokens, RuntimeReporterToken>]
+          : []
     : [];
 
 /**

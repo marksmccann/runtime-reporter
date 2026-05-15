@@ -4,7 +4,7 @@
 
 ### Features
 
-* export ReporterTokensArgs and RuntimeReporter types + update description ([e7c047a](https://github.com/marksmccann/runtime-reporter/commit/e7c047afedd9696ec9f38474a73488abc61a76db))
+- export ReporterTokensArgs and RuntimeReporter types + update description ([e7c047a](https://github.com/marksmccann/runtime-reporter/commit/e7c047afedd9696ec9f38474a73488abc61a76db))
 
 ## [0.6.0](https://github.com/marksmccann/runtime-reporter/compare/v0.5.1...v0.6.0) (2026-04-29)
 

@@ -143,13 +143,20 @@ reporter.fail("ERR01");
 Annotate your messages to get autocomplete and compile-time validation for message codes and token names.
 
 ```ts
-const messages: RuntimeReporterMessages<{
-    code: "ERR01";
-    template: "{{ componentName }} failed to mount";
-    tokens: "componentName";
-}> = {
+const messages: RuntimeReporterMessages<
+    | {
+          code: "ERR01";
+          template: "{{ componentName }} failed to mount";
+          tokens: "componentName";
+      }
+    | {
+          code: "ERR02";
+          template: "Failed to load configuration";
+      }
+> = {
     // ✅ Autocomplete
     ERR01: "{{ componentName }} failed to mount",
+    ERR02: "Failed to load configuration",
 };
 
 const reporter = createReporter(messages);
@@ -157,11 +164,14 @@ const reporter = createReporter(messages);
 // ✅ Autocomplete
 reporter.error("ERR01", { componentName: "MyComponent" });
 
-// ❌ TypeScript Error: "ERR02" is not a valid message code
-reporter.error("ERR02", { componentName: "MyComponent" });
+// ✅ No second argument needed when the message has no tokens
+reporter.error("ERR02");
 
 // ❌ TypeScript Error: "componentName" token is required
 reporter.error("ERR01");
+
+// ❌ TypeScript Error: "ERR03" is not a valid message code
+reporter.error("ERR03", { componentName: "MyComponent" });
 ```
 
 ### 5. Test friendly
@@ -212,13 +222,13 @@ Takes a messages object, an optional set of configuration options, and returns a
 
 ### `RuntimeReporter`
 
-| Method  | Type                                                       | Description                                                                                                                             |
-| ------- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| message | `(code: string, tokens:? RuntimeReporterTokens) => string` | Returns the resolved message (no logging); useful for testing environments.                                                             |
-| warn    | `(code: string, tokens:? RuntimeReporterTokens) => void`   | Logs via `console.warn` **only if** the template exists in `messages`.                                                                  |
-| error   | `(code: string, tokens:? RuntimeReporterTokens) => void`   | Logs via `console.error` **only if** the template exists in `messages`.                                                                 |
-| log     | `(code: string, tokens:? RuntimeReporterTokens) => void`   | Logs via `console.log` **only if** the template exists in `messages`.                                                                   |
-| fail    | `(code: string, tokens:? RuntimeReporterTokens) => never`  | Throws `new Error(resolvedMessage)` in **all** environments. Uses the `defaultTemplate` when the template does not exist in `messages`. |
+| Method  | Type                                                       | Description                                                                                                                                                                                                             |
+| ------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| message | `(code: string, tokens?: RuntimeReporterTokens) => string` | Returns the resolved message (no logging); useful for testing environments. The `tokens` argument is only accepted when that code declares tokens.                                                                      |
+| warn    | `(code: string, tokens?: RuntimeReporterTokens) => void`   | Logs via `console.warn` **only if** the template exists in `messages`. The `tokens` argument is required for tokenized messages and omitted otherwise.                                                                  |
+| error   | `(code: string, tokens?: RuntimeReporterTokens) => void`   | Logs via `console.error` **only if** the template exists in `messages`. The `tokens` argument is required for tokenized messages and omitted otherwise.                                                                 |
+| log     | `(code: string, tokens?: RuntimeReporterTokens) => void`   | Logs via `console.log` **only if** the template exists in `messages`. The `tokens` argument is required for tokenized messages and omitted otherwise.                                                                   |
+| fail    | `(code: string, tokens?: RuntimeReporterTokens) => never`  | Throws `new Error(resolvedMessage)` in **all** environments. Uses the `defaultTemplate` when the template does not exist in `messages`. The `tokens` argument is required for tokenized messages and omitted otherwise. |
 
 ### `RuntimeReporterOptions`
 
@@ -284,6 +294,32 @@ it("should log error if component fails to mount", () => {
         reporter.message("ERR01", { componentName: "MyComponent" })
     );
 });
+```
+
+### Messages without tokens
+
+If a message type does not declare `tokens`, do not pass a second argument.
+
+```ts
+const messages: RuntimeReporterMessages<
+    | {
+          code: "ERR01";
+          template: "{{ componentName }} failed to mount";
+          tokens: "componentName";
+      }
+    | {
+          code: "INFO01";
+          template: "Ready";
+      }
+> = {
+    ERR01: "{{ componentName }} failed to mount",
+    INFO01: "Ready",
+};
+
+const reporter = createReporter(messages);
+
+reporter.message("INFO01");
+reporter.log("INFO01");
 ```
 
 ### Using `onReport` and `formatMessage` together

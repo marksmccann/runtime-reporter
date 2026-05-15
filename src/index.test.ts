@@ -29,6 +29,29 @@ const messages: RuntimeReporterMessages<TestMessages> = {
     ERR04: "{{ name }} failed at {{ location }}",
 };
 
+type DerivedTokenMessages =
+    | {
+          code: "WITH_TOKENS";
+          template: "{{ name }} failed";
+          tokens: "name";
+      }
+    | {
+          code: "WITHOUT_TOKENS";
+          template: "Ready";
+          tokens: never;
+      };
+
+const derivedMessages: RuntimeReporterMessages<DerivedTokenMessages> = {
+    WITH_TOKENS: "{{ name }} failed",
+    WITHOUT_TOKENS: "Ready",
+};
+
+const derivedReporter = createReporter(derivedMessages);
+
+derivedReporter.message("WITHOUT_TOKENS");
+// @ts-expect-error tokens should still be required when the message declares them
+derivedReporter.message("WITH_TOKENS");
+
 describe("createReporter", () => {
     describe("message()", () => {
         it("returns formatted message with token substitution and code suffix", () => {

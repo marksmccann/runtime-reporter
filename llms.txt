@@ -1,0 +1,60 @@
+runtime-reporter
+
+Small TypeScript library for centralized runtime messages and type-safe logging/error reporting.
+
+Primary source files:
+- src/index.ts: full runtime implementation and exported types
+- src/index.test.ts: runtime and type-level tests
+- README.md: package docs and examples
+- package.json: build/test/lint scripts and published entrypoints
+
+Package entrypoint:
+- Exports from src/index.ts
+- Published as ESM and CommonJS with generated declaration files
+
+Main API:
+- createReporter(messages, options?)
+- Reporter methods: message, warn, error, log, fail
+
+Message model:
+- Each message type has:
+  - code: string literal
+  - template: string literal
+  - optional tokens: union of token-name string literals
+- RuntimeReporterMessages<T> converts the message-type union into a code-to-template object
+
+Behavior:
+- message(code, ...args): resolves placeholders and returns formatted string
+- warn/error/log(code, ...args): resolve placeholders, call onReport if present, and log only if code exists in messages
+- fail(code, ...args): resolves placeholders, calls onReport if present, and throws Error(formattedMessage)
+- Missing codes use defaultTemplate, defaulting to "An error occurred"
+- Default formatting is "<message> (<code>)"
+
+Token replacement:
+- Placeholder syntax is {{ token }}
+- Token names are regex-escaped before replacement
+- Error token values use error.message
+- null and undefined become empty strings
+
+Typing details:
+- ReporterTokensArgs decides whether the second argument exists for a given code
+- Tokenized messages require the second argument
+- Tokenless messages omit the second argument
+- tokens: never is treated the same as omitting tokens
+
+Current verified behaviors from tests:
+- Single-token and multi-token substitution
+- Tokenless messages
+- Custom formatMessage
+- onReport is not called by message()
+- onReport is called by log/warn/error/fail with unformatted message text
+- error/warn/log only log when the code exists in the provided messages
+- fail always throws
+
+Project commands:
+- npm run build
+- npm test
+- npm run lint
+- npm run format
+
+Do not infer features beyond the code and tests in this repository.
