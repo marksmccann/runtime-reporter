@@ -12,6 +12,7 @@ Managing client-side error states and telemetry usually leads to duplicated stri
 - **Production-Safe & Lightweight**: Pass an empty object in production to cleanly strip out debug strings, protecting sensitive app details and dropping bundle sizes.
 - **Compile-Time Token Inference**: Intersperse curly brace variables in your strings and get automatic TypeScript autocomplete and parameter validation.
 - **Test-Friendly Assertions**: Compare error events against compiled messages cleanly without copy-pasting raw strings into test files.
+- **Traceable Error Codes**: Stable error codes make reports easy to trace from the console back to the exact source message definition in your codebase.
 
 ## Who is this for?
 
@@ -29,7 +30,6 @@ npm install runtime-reporter
 
 ### 1. Define your messages and create your reporter
 
-<!-- prettier-ignore -->
 ```ts
 import { createReporter } from "runtime-reporter";
 
@@ -40,26 +40,24 @@ const messages = {
 
 const reporter = createReporter(
     // Use an empty message set in production for safer, smaller builds
-    process.env.NODE_ENV === "production"
-        ? ({} as typeof messages)
-        : messages
+    process.env.NODE_ENV === "production" ? ({} as typeof messages) : messages
 );
 
 export default reporter;
 ```
 
-### 2. Use it in your codebase
+### 2. Call the reporter methods from your code
 
 ```ts
 import reporter from "./my-reporter";
 
 reporter.fail("ERR01");
 // Non-production: throws "Something went wrong (ERR01)"
-// Production: throws "An error occurred (ERR01)" (Opaque fallback string)
+// Production: throws "An error occurred (ERR01)" (Opaque fallback string because the production set is empty)
 
 reporter.error("ERR02", { componentName: "MyComponent" });
 // Non-production: logs "MyComponent failed to mount (ERR02)"
-// Production: does not log (Safely silenced because the production dictionary is empty)
+// Production: does not log (Safely silenced because the production set is empty)
 ```
 
 ## Features & Core Concepts
@@ -84,7 +82,7 @@ Inject runtime data via double-curly template parameters; token requirements are
 const reporter = createReporter({
     ERR01: "Something went wrong",
     ERR02: "{{ componentName }} failed to mount",
-} as const);
+} as const); // 👈 The "as const" is required
 
 // ✅ Autocomplete & token injection works flawlessly
 reporter.error("ERR02", { componentName: "MyComponent" });
