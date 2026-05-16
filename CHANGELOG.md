@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.9.0](https://github.com/marksmccann/runtime-reporter/compare/v0.7.0...v0.9.0) (2026-05-16)
+
+### ⚠ BREAKING CHANGES
+
+* **types:** createReporter typing now infers tokens from template strings and no longer uses
+the old metadata-based RuntimeReporterMessages<T> pattern.
+
+### Features
+
+* harden ReporterTokensArgs type + add llms.txt file ([1f904f0](https://github.com/marksmccann/runtime-reporter/commit/1f904f01a3d8720c0953d9a45586b6e8bd20d291))
+
+### Bug Fixes
+
+* **types:** infer reporter tokens from message templates ([cc5c5c8](https://github.com/marksmccann/runtime-reporter/commit/cc5c5c87e73645043d11abe8125439e2864447d6))
+
 ## [0.7.0](https://github.com/marksmccann/runtime-reporter/compare/v0.6.0...v0.7.0) (2026-05-14)
 
 ### Features
