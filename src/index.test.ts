@@ -1,56 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createReporter, type RuntimeReporterMessages } from "./index.js";
+import { createReporter } from "./index.js";
 
-type TestMessages =
-    | {
-          code: "ERR01";
-          template: "{{ name }} failed";
-          tokens: "name";
-      }
-    | {
-          code: "WARN02";
-          template: "Deprecated: {{ option }}";
-          tokens: "option";
-      }
-    | {
-          code: "INFO03";
-          template: "Ready";
-      }
-    | {
-          code: "ERR04";
-          template: "{{ name }} failed at {{ location }}";
-          tokens: "name" | "location";
-      };
-
-const messages: RuntimeReporterMessages<TestMessages> = {
+const messages = {
     ERR01: "{{ name }} failed",
     WARN02: "Deprecated: {{ option }}",
     INFO03: "Ready",
     ERR04: "{{ name }} failed at {{ location }}",
-};
+    ERR05: "{{   componentName   }} broke in {{\tstage\t}}",
+} as const;
 
-type DerivedTokenMessages =
-    | {
-          code: "WITH_TOKENS";
-          template: "{{ name }} failed";
-          tokens: "name";
-      }
-    | {
-          code: "WITHOUT_TOKENS";
-          template: "Ready";
-          tokens: never;
-      };
+const inferredReporter = createReporter(messages);
 
-const derivedMessages: RuntimeReporterMessages<DerivedTokenMessages> = {
-    WITH_TOKENS: "{{ name }} failed",
-    WITHOUT_TOKENS: "Ready",
-};
-
-const derivedReporter = createReporter(derivedMessages);
-
-derivedReporter.message("WITHOUT_TOKENS");
-// @ts-expect-error tokens should still be required when the message declares them
-derivedReporter.message("WITH_TOKENS");
+inferredReporter.message("INFO03");
+// @ts-expect-error token-less templates should not accept a second argument
+inferredReporter.message("INFO03", {});
+// @ts-expect-error tokens should still be required when the template declares them
+inferredReporter.message("ERR01");
+// @ts-expect-error multiple inferred tokens should all be required
+inferredReporter.message("ERR04", { name: "ConfigLoader" });
+inferredReporter.message("ERR04", { name: "ConfigLoader", location: "boot" });
+inferredReporter.message("ERR05", { componentName: "Button", stage: "render" });
 
 describe("createReporter", () => {
     describe("message()", () => {
@@ -79,6 +48,14 @@ describe("createReporter", () => {
 
             expect(reporter.message("ERR04", { name: "ConfigLoader", location: "boot" })).toBe(
                 "ConfigLoader failed at boot (ERR04)"
+            );
+        });
+
+        it("trims whitespace around inferred token names", () => {
+            const reporter = createReporter(messages);
+
+            expect(reporter.message("ERR05", { componentName: "Button", stage: "render" })).toBe(
+                "Button broke in render (ERR05)"
             );
         });
 
@@ -115,8 +92,8 @@ describe("createReporter", () => {
         });
 
         it("error() does not log when code is missing (empty messages)", () => {
-            const emptyMessages = {} as Record<string, string>;
-            const reporter = createReporter(emptyMessages as RuntimeReporterMessages<TestMessages>);
+            const emptyMessages = {} as typeof messages;
+            const reporter = createReporter(emptyMessages);
             reporter.error("ERR01", { name: "X" });
 
             expect(console.error).not.toHaveBeenCalled();
@@ -183,7 +160,7 @@ describe("createReporter", () => {
         });
 
         it("uses defaultTemplate when code is not in messages", () => {
-            const reporter = createReporter({} as RuntimeReporterMessages<TestMessages>, {
+            const reporter = createReporter({} as typeof messages, {
                 defaultTemplate: "Something went wrong",
             });
 
@@ -194,7 +171,7 @@ describe("createReporter", () => {
         });
 
         it("uses default defaultTemplate when code missing and no option", () => {
-            const reporter = createReporter({} as RuntimeReporterMessages<TestMessages>);
+            const reporter = createReporter({} as typeof messages);
 
             // @ts-expect-error - This is a test case for the defaultTemplate
             expect(() => reporter.fail("X")).toThrow(new Error("An error occurred (X)"));

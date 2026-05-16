@@ -26,7 +26,6 @@ The package currently exports types and one factory:
 - `RuntimeReporterMessages`
 - `RuntimeReporterToken`
 - `RuntimeReporterTokens`
-- `ReporterTokensArgs`
 - `RuntimeReporter`
 - `RuntimeReporterReportPayload`
 - `RuntimeReporterOptions`
@@ -47,7 +46,7 @@ The current implementation does the following:
 - Escapes token names before building the replacement regex.
 - Converts `Error` token values to `error.message`.
 - Converts `null` and `undefined` token values to empty strings.
-- Uses `formatMessage(message, code)` to produce the final string shown to users; the default format is ``${message} (${code})``.
+- Uses `formatMessage(message, code)` to produce the final string shown to users; the default format is `${message} (${code})`.
 - Uses `defaultTemplate`, which defaults to `"An error occurred"`, when a code is not present in `messages`.
 - Calls `onReport` for `error`, `warn`, `log`, and `fail`, but not for `message`.
 - Passes the unformatted resolved message to `onReport`.
@@ -56,19 +55,20 @@ The current implementation does the following:
 
 The library’s type-driven ergonomics are a major feature.
 
-- `RuntimeReporterMessages<T>` maps a union of message descriptors into a `code -> template` object shape.
-- `ReporterTokensArgs<T, U>` determines whether reporter methods take a second argument for a given code.
-- If a message declares token names with `tokens: "name" | "other"`, the second argument is required and typed as a record of those keys.
-- If a message has no tokens, the second argument is omitted.
-- The current implementation also treats `tokens: never` the same as omitting `tokens`, to support derived/generated consumer types.
+- `createReporter` is generic on the messages record itself, not on a separate message-descriptor union.
+- `RuntimeReporterMessages` is a record-oriented helper type.
+- If a template contains placeholders, the second argument is required and typed as a record of those inferred keys.
+- If a template contains no placeholders, the second argument is omitted.
 - `message()` has a DX-oriented literal return type based on the template string and code, but the runtime value is the resolved formatted string.
+- Template-parsing utility types exist in the source as private implementation details and are not part of the intended public API.
 
 ## Tested Cases
 
 The current tests cover these behaviors:
 
 - Formatted message resolution with one token and multiple tokens
-- Tokenless messages
+- Token-less messages
+- Trimming whitespace around inferred token names
 - Custom `formatMessage`
 - `message()` not triggering `onReport`
 - `error`, `warn`, and `log` console behavior when codes exist
@@ -76,7 +76,7 @@ The current tests cover these behaviors:
 - `onReport` payloads for `log`, `warn`, `error`, and `fail`
 - `fail()` throwing formatted errors
 - `defaultTemplate` fallback behavior
-- Type-level handling for a tokenized message and a `tokens: never` message
+- Type-level handling for tokenized templates, tokenless templates, and multiple inferred tokens
 
 ## Commands
 

@@ -17,11 +17,8 @@ Main API:
 - Reporter methods: message, warn, error, log, fail
 
 Message model:
-- Each message type has:
-  - code: string literal
-  - template: string literal
-  - optional tokens: union of token-name string literals
-- RuntimeReporterMessages<T> converts the message-type union into a code-to-template object
+- Messages are defined as a record of code -> template string
+- RuntimeReporterMessages is the record-oriented helper type
 
 Behavior:
 - message(code, ...args): resolves placeholders and returns formatted string
@@ -37,14 +34,15 @@ Token replacement:
 - null and undefined become empty strings
 
 Typing details:
-- ReporterTokensArgs decides whether the second argument exists for a given code
-- Tokenized messages require the second argument
-- Tokenless messages omit the second argument
-- tokens: never is treated the same as omitting tokens
+- Token names are inferred from {{ tokenName }} placeholders in each template string
+- Tokenized templates require the second argument
+- Token-less templates omit the second argument
+- Template-parsing helper types are private implementation details, not part of the intended public API
 
 Current verified behaviors from tests:
 - Single-token and multi-token substitution
-- Tokenless messages
+- Token-less messages
+- Whitespace trimming for inferred token names
 - Custom formatMessage
 - onReport is not called by message()
 - onReport is called by log/warn/error/fail with unformatted message text

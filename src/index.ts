@@ -1,20 +1,8 @@
 /**
- * The type information for a single runtime reporter message
- * @since v0.1.0
+ * The type for a full list of messages organized by code and template string.
+ * @since v0.8.0
  */
-export type RuntimeReporterMessage = {
-    code: string;
-    template: string;
-    tokens?: string;
-};
-
-/**
- * The type for a full list of messages with their associated code and template
- * @since v0.1.0
- */
-export type RuntimeReporterMessages<T extends RuntimeReporterMessage> = {
-    [K in T["code"]]: Extract<T, { code: K }>["template"];
-};
+export type RuntimeReporterMessages = Record<string, string>;
 
 /**
  * The type for the supported values of a placeholder token
@@ -29,38 +17,63 @@ export type RuntimeReporterToken = string | number | boolean | Error | null | un
 export type RuntimeReporterTokens = Record<string, RuntimeReporterToken>;
 
 /**
- * A utility type used to determine the second argument of the runtime reporter methods
- * @since v0.7.0
+ * Trims spaces, tabs, and newlines from both ends of a string literal.
+ * @private
  */
-export type ReporterTokensArgs<T extends RuntimeReporterMessage, U extends T["code"]> = Extract<
-    T,
-    { code: U }
->["tokens"] extends infer Tokens
-    ? [Tokens] extends [never]
-        ? []
-        : [Tokens] extends [string]
-          ? [tokens: Record<Tokens, RuntimeReporterToken>]
-          : []
-    : [];
+type Trim<S extends string> = S extends ` ${infer Rest}`
+    ? Trim<Rest>
+    : S extends `${infer Rest} `
+      ? Trim<Rest>
+      : S extends `\n${infer Rest}`
+        ? Trim<Rest>
+        : S extends `${infer Rest}\n`
+          ? Trim<Rest>
+          : S extends `\t${infer Rest}`
+            ? Trim<Rest>
+            : S extends `${infer Rest}\t`
+              ? Trim<Rest>
+              : S;
+
+/**
+ * Extracts all token names declared in `{{ tokenName }}` placeholders within a template string.
+ * @private
+ */
+type TemplateTokens<S extends string> = S extends `${infer _Start}{{${infer Token}}}${infer Rest}`
+    ? Trim<Token> | TemplateTokens<Rest>
+    : never;
+
+/**
+ * Resolves the token record type for a specific template string.
+ * @private
+ */
+type ReporterTokens<S extends string> = [TemplateTokens<S>] extends [never]
+    ? never
+    : Record<TemplateTokens<S>, RuntimeReporterToken>;
+
+/**
+ * Determines the second argument tuple for a specific template string.
+ * @private
+ */
+type TokensArg<S extends string> = [TemplateTokens<S>] extends [never]
+    ? []
+    : [tokens: ReporterTokens<S>];
 
 /**
  * Return type for message(); displays the template + code in default format on hover.
  * The runtime value is the resolved string (tokens substituted); the type is for DX only.
  * @private
  */
-type MessageReturnType<T extends RuntimeReporterMessage, U extends T["code"]> =
-    Extract<T, { code: U }> extends { template: infer Template }
-        ? Template extends string
-            ? `${Template} (${U})`
-            : string
-        : string;
+type MessageReturnType<
+    M extends RuntimeReporterMessages,
+    K extends keyof M & string,
+> = M[K] extends string ? `${M[K]} (${K})` : string;
 
 /**
  * The runtime report object with all of it's associated methods;
  * the result of the primary export: `createReporter`
  * @since v0.7.0
  */
-export interface RuntimeReporter<T extends RuntimeReporterMessage> {
+export interface RuntimeReporter<M extends RuntimeReporterMessages> {
     /**
      * Retrieves the full text of the targeted message
      *
@@ -73,10 +86,7 @@ export interface RuntimeReporter<T extends RuntimeReporterMessage> {
      * @param code A direct reference to the unique code for the targeted message
      * @param args The remaining optional argument for the function; a record containing the placeholder token values
      */
-    message<U extends T["code"]>(
-        code: U,
-        ...args: ReporterTokensArgs<T, U>
-    ): MessageReturnType<T, U>;
+    message<K extends keyof M & string>(code: K, ...args: TokensArg<M[K]>): MessageReturnType<M, K>;
 
     /**
      * Logs a warning to the console with the full text of the targeted message
@@ -87,7 +97,7 @@ export interface RuntimeReporter<T extends RuntimeReporterMessage> {
      * @param code A direct reference to the unique code for the targeted message
      * @param args A record containing the placeholder token values for the message
      */
-    warn<U extends T["code"]>(code: U, ...args: ReporterTokensArgs<T, U>): void;
+    warn<K extends keyof M & string>(code: K, ...args: TokensArg<M[K]>): void;
 
     /**
      * Logs an error to the console with the full text of the targeted message
@@ -98,7 +108,7 @@ export interface RuntimeReporter<T extends RuntimeReporterMessage> {
      * @param code A direct reference to the unique code for the targeted message
      * @param args A record containing the placeholder token values for the message
      */
-    error<U extends T["code"]>(code: U, ...args: ReporterTokensArgs<T, U>): void;
+    error<K extends keyof M & string>(code: K, ...args: TokensArg<M[K]>): void;
 
     /**
      * Logs a message to the console with the full text of the targeted message
@@ -109,7 +119,7 @@ export interface RuntimeReporter<T extends RuntimeReporterMessage> {
      * @param code A direct reference to the unique code for the targeted message
      * @param args A record containing the placeholder token values for the message
      */
-    log<U extends T["code"]>(code: U, ...args: ReporterTokensArgs<T, U>): void;
+    log<K extends keyof M & string>(code: K, ...args: TokensArg<M[K]>): void;
 
     /**
      * Throws an error with the full text of the targeted message in all environments
@@ -119,11 +129,12 @@ export interface RuntimeReporter<T extends RuntimeReporterMessage> {
      * @param code A direct reference to the unique code for the targeted message
      * @param args A record containing the placeholder token values for the message
      */
-    fail<U extends T["code"]>(code: U, ...args: ReporterTokensArgs<T, U>): never;
+    fail<K extends keyof M & string>(code: K, ...args: TokensArg<M[K]>): never;
 }
 
 /**
  * The payload for the onReport hook
+ * @since v0.1.0
  */
 export type RuntimeReporterReportPayload = {
     /**
@@ -206,10 +217,10 @@ const resolveTemplate = function resolveTemplate(
  * @returns A runtime report object
  * @since v0.1.0
  */
-export function createReporter<T extends RuntimeReporterMessage>(
-    messages: RuntimeReporterMessages<T>,
+export function createReporter<const M extends RuntimeReporterMessages>(
+    messages: M,
     options: RuntimeReporterOptions = {}
-): RuntimeReporter<T> {
+): RuntimeReporter<M> {
     const {
         formatMessage = (message, code) => `${message} (${code})`,
         defaultTemplate = "An error occurred",
@@ -236,7 +247,7 @@ export function createReporter<T extends RuntimeReporterMessage>(
         message: (code, ...args) => {
             const message = resolveMessage(code, ...args);
             const formattedMessage = formatMessage(message, code);
-            return formattedMessage as MessageReturnType<T, typeof code & T["code"]>;
+            return formattedMessage as MessageReturnType<M, typeof code & keyof M & string>;
         },
         error: (code, ...args) => {
             const message = resolveMessage(code, ...args);

@@ -54,28 +54,13 @@ npm install runtime-reporter
 A full, copy-and-paste example of how to use Runtime Reporter in your project:
 
 ```ts
-import { createReporter, type RuntimeReporterMessages } from "runtime-reporter";
+import { createReporter } from "runtime-reporter";
 
-const messages: RuntimeReporterMessages<
-    | {
-          code: "ERR01";
-          template: "{{ componentName }} failed to mount";
-          tokens: "componentName";
-      }
-    | {
-          code: "ERR02";
-          template: "Failed to load configuration";
-      }
-    | {
-          code: "ERR03";
-          template: "Failed to fetch {{ resource }} from {{ url }}";
-          tokens: "resource" | "url";
-      }
-> = {
+const messages = {
     ERR01: "{{ componentName }} failed to mount",
     ERR02: "Failed to load configuration",
     ERR03: "Failed to fetch {{ resource }} from {{ url }}",
-};
+} as const;
 
 /** The runtime reporter for <project-name> */
 const reporter = createReporter(
@@ -99,8 +84,8 @@ console.log("Something went wrong");
 // ❌ Logs: "Something went wrong"
 
 // With runtime-reporter
-reporter.log("ERR01");
-// ✅ Logs: "Something went wrong (ERR01)"
+reporter.log("ERR02");
+// ✅ Logs: "Something went wrong (ERR02)"
 ```
 
 ### 2. Dynamic messages
@@ -110,7 +95,7 @@ Inject runtime data into your messages via message templates and tokenized varia
 ```ts
 const reporter = createReporter({
     ERR01: "{{ componentName }} failed to mount",
-});
+} as const);
 
 reporter.error("ERR01", { componentName: "MyComponent" });
 // ✅ Logs: "MyComponent failed to mount (ERR01)"
@@ -129,35 +114,27 @@ const reporter = createReporter(
 Development environments get detailed messaging, while production environments get as little as possible.
 
 ```ts
-reporter.error("ERR01");
-// ✅ In development, it logs: "Something went wrong (ERR01)"
+reporter.error("ERR02");
+// ✅ In development, it logs: "Failed to load configuration (ERR02)"
 // ✅ In production, it does not log
 
-reporter.fail("ERR01");
-// ✅ In development, it throws: "Something went wrong (ERR01)"
-// ✅ In production, it throws: "An error occurred (ERR01)"
+reporter.fail("ERR02");
+// ✅ In development, it throws: "Failed to load configuration (ERR02)"
+// ✅ In production, it throws: "An error occurred (ERR02)"
 ```
 
 ### 4. Type safety
 
-Annotate your messages to get autocomplete and compile-time validation for message codes and token names.
+Define your messages as an `as const` record to get autocomplete and compile-time validation for message codes.
+
+> Note: Token names are inferred directly from the template strings. Whitespace inside placeholders is trimmed, so `{{ name }}` and `{{   name   }}` infer the same token key.
 
 ```ts
-const messages: RuntimeReporterMessages<
-    | {
-          code: "ERR01";
-          template: "{{ componentName }} failed to mount";
-          tokens: "componentName";
-      }
-    | {
-          code: "ERR02";
-          template: "Failed to load configuration";
-      }
-> = {
+const messages = {
     // ✅ Autocomplete
     ERR01: "{{ componentName }} failed to mount",
     ERR02: "Failed to load configuration",
-};
+} as const; // 👈 The "as const" is required
 
 const reporter = createReporter(messages);
 
@@ -169,6 +146,9 @@ reporter.error("ERR02");
 
 // ❌ TypeScript Error: "componentName" token is required
 reporter.error("ERR01");
+
+// ❌ TypeScript Error: token-less messages reject a second argument
+reporter.error("ERR02", {});
 
 // ❌ TypeScript Error: "ERR03" is not a valid message code
 reporter.error("ERR03", { componentName: "MyComponent" });
@@ -205,7 +185,7 @@ const reporter = createReporter(messages, {
     },
 });
 
-reporter.error("ERR01");
+reporter.error("ERR01", { componentName: "MyComponent" });
 // ✅ Sends a POST request with the following payload:
 // {
 //     code: "ERR01",
@@ -216,19 +196,19 @@ reporter.error("ERR01");
 
 ## API
 
-### `createReporter(RuntimeReporterMessages, options?: RuntimeReporterOptions): RuntimeReporter`
+### `createReporter(messages, options?: RuntimeReporterOptions): RuntimeReporter`
 
-Takes a messages object, an optional set of configuration options, and returns a reporter object.
+Takes a record of message templates, an optional set of configuration options, and returns a reporter object. Token requirements are inferred from `{{ tokenName }}` placeholders in each template.
 
 ### `RuntimeReporter`
 
-| Method  | Type                                                       | Description                                                                                                                                                                                                             |
-| ------- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| message | `(code: string, tokens?: RuntimeReporterTokens) => string` | Returns the resolved message (no logging); useful for testing environments. The `tokens` argument is only accepted when that code declares tokens.                                                                      |
-| warn    | `(code: string, tokens?: RuntimeReporterTokens) => void`   | Logs via `console.warn` **only if** the template exists in `messages`. The `tokens` argument is required for tokenized messages and omitted otherwise.                                                                  |
-| error   | `(code: string, tokens?: RuntimeReporterTokens) => void`   | Logs via `console.error` **only if** the template exists in `messages`. The `tokens` argument is required for tokenized messages and omitted otherwise.                                                                 |
-| log     | `(code: string, tokens?: RuntimeReporterTokens) => void`   | Logs via `console.log` **only if** the template exists in `messages`. The `tokens` argument is required for tokenized messages and omitted otherwise.                                                                   |
-| fail    | `(code: string, tokens?: RuntimeReporterTokens) => never`  | Throws `new Error(resolvedMessage)` in **all** environments. Uses the `defaultTemplate` when the template does not exist in `messages`. The `tokens` argument is required for tokenized messages and omitted otherwise. |
+| Method  | Type                                             | Description                                                                                                                              |
+| ------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| message | `(code: string, tokens?: RuntimeReporterTokens)` | Returns the resolved message without logging. This is especially useful in tests.                                                        |
+| warn    | `(code: string, tokens?: RuntimeReporterTokens)` | Logs via `console.warn` **only if** the template exists in `messages`.                                                                   |
+| error   | `(code: string, tokens?: RuntimeReporterTokens)` | Logs via `console.error` **only if** the template exists in `messages`.                                                                  |
+| log     | `(code: string, tokens?: RuntimeReporterTokens)` | Logs via `console.log` **only if** the template exists in `messages`.                                                                    |
+| fail    | `(code: string, tokens?: RuntimeReporterTokens)` | Throws `new Error(formattedMessage)` in **all** environments. Uses the `defaultTemplate` when the template does not exist in `messages`. |
 
 ### `RuntimeReporterOptions`
 
@@ -243,6 +223,14 @@ Takes a messages object, an optional set of configuration options, and returns a
 | Property | Type                   | Description                                                                                                                  |
 | -------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | `string` | `RuntimeReporterToken` | A record of token names along with their replacement value. Supported types include: `string`, `number`, `boolean`, `Error`. |
+
+### `RuntimeReporterMessages`
+
+`RuntimeReporterMessages` is the record-oriented helper type used by `createReporter`.
+
+```ts
+type RuntimeReporterMessages = Record<string, string>;
+```
 
 ### `RuntimeReporterReportPayload`
 
@@ -276,8 +264,8 @@ const reporter = createReporter(
     process.env.NODE_ENV === "production" ? ({} as typeof messages) : messages
 );
 
-reporter.fail("ERR01");
-// throws: "An error occurred (ERR01)"
+reporter.fail("ERR02");
+// throws: "An error occurred (ERR02)"
 ```
 
 ### Using `message()` in tests
@@ -298,23 +286,13 @@ it("should log error if component fails to mount", () => {
 
 ### Messages without tokens
 
-If a message type does not declare `tokens`, do not pass a second argument.
+If a template does not contain any `{{ token }}` placeholders, do not pass a second argument.
 
 ```ts
-const messages: RuntimeReporterMessages<
-    | {
-          code: "ERR01";
-          template: "{{ componentName }} failed to mount";
-          tokens: "componentName";
-      }
-    | {
-          code: "INFO01";
-          template: "Ready";
-      }
-> = {
+const messages = {
     ERR01: "{{ componentName }} failed to mount",
     INFO01: "Ready",
-};
+} as const;
 
 const reporter = createReporter(messages);
 
@@ -324,13 +302,13 @@ reporter.log("INFO01");
 
 ### Using `onReport` and `formatMessage` together
 
-By combining the `onReport` and `formatMessage` options, you can have granular control over the message output and reporting behavior. For example, you could log a generic message to users while still sending the full payload to a remote service in production environments. At the same time, you can log the full message in non-production environments for debugging purposes.
+By combining the `onReport` and `formatMessage` options, you can have granular control over the message output and reporting behavior. For example, you could log an opaque message to users while still sending the full payload to a remote service in production environments. At the same time, you can log the full message in non-production environments for debugging purposes.
 
 ```ts
 const reporter = createReporter(messages, {
     formatMessage: (message, code) => {
         if (process.env.NODE_ENV === "production") {
-            return "Generic error message ...";
+            return "Opaque error message ...";
         } else {
             return `${message} (${code})`;
         }
@@ -345,35 +323,23 @@ const reporter = createReporter(messages, {
     },
 });
 
-reporter.error("ERR01");
-// ✅ In production, users get a generic message AND remote service gets the full message
+reporter.error("ERR01", { componentName: "MyComponent" });
+// ✅ In production, users get am opaque message AND remote service gets the full message
 // ✅ In non-production, developers get the full message
 ```
 
 ### Type safety without TypeScript
 
-You can still get the same benefits as TypeScript by using JSDoc-style type annotations.
+You can still preserve literal template inference in JavaScript by using a const assertion style JSDoc annotation.
 
 ```js
-/**
- * @type {import("runtime-reporter").RuntimeReporterMessages<{
- *     code: "ERR01";
- *     template: "{{ componentName }} failed to mount";
- *     tokens: "componentName";
- * } | {
- *     code: "ERR02";
- *     template: "Failed to load configuration";
- * } | {
- *     code: "ERR03";
- *     template: "Failed to fetch {{ resource }} from {{ url }}";
- *     tokens: "resource" | "url";
- * }>}
- */
-const messages = {
+const messages = /** @type {const} */ ({
     ERR01: "{{ componentName }} failed to mount",
     ERR02: "Failed to load configuration",
     ERR03: "Failed to fetch {{ resource }} from {{ url }}",
-};
+});
+
+const reporter = createReporter(messages);
 ```
 
 ### CommonJS support
