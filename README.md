@@ -2,29 +2,41 @@
 
 A framework-agnostic, type-safe reporting library that standardizes how clients handle errors and logs.
 
+## Usage
+
+1. Define your messages and create your reporter
+
+<!-- prettier-ignore -->
 ```ts
 import { createReporter } from "runtime-reporter";
 
-// 1. Define your messages
 const messages = {
     ERR01: "Something went wrong",
     ERR02: "{{ componentName }} failed to mount",
 } as const;
 
-// 2. Create your reporter
 const reporter = createReporter(
-    // Pass an empty message set in production to avoid shipping detailed message text.
-    process.env.NODE_ENV === "production" ? ({} as typeof messages) : messages
+    // Use an empty message set in production for safer, smaller builds
+    process.env.NODE_ENV === "production"
+        ? ({} as typeof messages)
+        : messages
 );
 
-// 3. Call reporter methods in your code
+export default reporter;
+```
+
+2. Call the reporter methods in your code
+
+```ts
+import reporter from "./my-reporter";
+
 reporter.fail("ERR01");
-// Non-production, throws: "Something went wrong (ERR01)"
-// Production, throws: "An error occurred (ERR01)"
+// Non-production: throws "Something went wrong (ERR01)"
+// Production: throws "An error occurred (ERR01)"
 
 reporter.error("ERR02", { componentName: "MyComponent" });
-// Non-production, logs error: "MyComponent failed to mount (ERR02)"
-// Production, does not log
+// Non-production: logs "MyComponent failed to mount (ERR02)"
+// Production: does not log
 ```
 
 ## Why?
@@ -102,7 +114,7 @@ Development environments get detailed messaging, while production environments g
 
 ```ts
 reporter.warn("ERR01");
-// ✅ Non-production: Logs "Something went wrong (ERR01)"
+// ✅ Non-production: logs "Something went wrong (ERR01)"
 // ✅ Production: does not log
 
 reporter.fail("ERR01");
