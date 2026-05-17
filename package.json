@@ -1,6 +1,6 @@
 {
     "name": "runtime-reporter",
-    "version": "0.9.3",
+    "version": "0.9.4",
     "description": "A framework-agnostic, type-safe reporting library that standardizes how clients handle errors and logs.",
     "type": "module",
     "main": "./dist/index.cjs",

@@ -1,5 +1,7 @@
 # Changelog
 
+## [0.9.4](https://github.com/marksmccann/runtime-reporter/compare/v0.9.3...v0.9.4) (2026-05-17)
+
 ## [0.9.3](https://github.com/marksmccann/runtime-reporter/compare/v0.9.2...v0.9.3) (2026-05-16)
 
 ## [0.9.2](https://github.com/marksmccann/runtime-reporter/compare/v0.9.1...v0.9.2) (2026-05-16)
