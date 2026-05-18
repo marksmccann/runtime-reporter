@@ -38,7 +38,7 @@ type Trim<S extends string> = S extends ` ${infer Rest}`
  * Extracts all token names declared in `{{ tokenName }}` placeholders within a template string.
  * @private
  */
-type TemplateTokens<S extends string> = S extends `${infer _Start}{{${infer Token}}}${infer Rest}`
+type TemplateTokens<S extends string> = S extends `${string}{{${infer Token}}}${infer Rest}`
     ? Trim<Token> | TemplateTokens<Rest>
     : never;
 
@@ -75,6 +75,43 @@ type MessageReturnType<
  */
 export interface RuntimeReporter<M extends RuntimeReporterMessages> {
     /**
+     * Clears the internal warnOnce cache for this reporter instance
+     */
+    clearWarnings(): void;
+
+    /**
+     * Logs an error to the console with the full text of the targeted message
+     *
+     * _Note: This method will only log when the message associated with the code is found;
+     * meaning it will not be called in production if the `createReporter` function
+     * is provided an empty message set._
+     * @param code A direct reference to the unique code for the targeted message
+     * @param args A record containing the placeholder token values for the message
+     */
+    error<K extends keyof M & string>(code: K, ...args: TokensArg<M[K]>): void;
+
+    /**
+     * Throws an error with the full text of the targeted message in all environments
+     *
+     * _Note: When the `createReporter` function is called in production with an empty
+     * message set, this method will use the "defaultTemplate" option in this format: "&lt;defaultTemplate> (&lt;code>)"_
+     * @param code A direct reference to the unique code for the targeted message
+     * @param args A record containing the placeholder token values for the message
+     */
+    fail<K extends keyof M & string>(code: K, ...args: TokensArg<M[K]>): never;
+
+    /**
+     * Logs a message to the console with the full text of the targeted message
+     *
+     * _Note: This method will only log when the message associated with the code is found;
+     * meaning it will not be called in production if the `createReporter` function
+     * is provided an empty message set._
+     * @param code A direct reference to the unique code for the targeted message
+     * @param args A record containing the placeholder token values for the message
+     */
+    log<K extends keyof M & string>(code: K, ...args: TokensArg<M[K]>): void;
+
+    /**
      * Retrieves the full text of the targeted message
      *
      * _Note: As a convenience, the return type will attempt to show the literal type of the template
@@ -100,36 +137,15 @@ export interface RuntimeReporter<M extends RuntimeReporterMessages> {
     warn<K extends keyof M & string>(code: K, ...args: TokensArg<M[K]>): void;
 
     /**
-     * Logs an error to the console with the full text of the targeted message
+     * Logs a warning to the console the first time a code is reported
      *
-     * _Note: This method will only log when the message associated with the code is found;
-     * meaning it will not be called in production if the `createReporter` function
-     * is provided an empty message set._
+     * _Note: This method deduplicates by code per reporter instance and will only log
+     * when the message associated with the code is found; meaning it will not be called
+     * in production if the `createReporter` function is provided an empty message set._
      * @param code A direct reference to the unique code for the targeted message
      * @param args A record containing the placeholder token values for the message
      */
-    error<K extends keyof M & string>(code: K, ...args: TokensArg<M[K]>): void;
-
-    /**
-     * Logs a message to the console with the full text of the targeted message
-     *
-     * _Note: This method will only log when the message associated with the code is found;
-     * meaning it will not be called in production if the `createReporter` function
-     * is provided an empty message set._
-     * @param code A direct reference to the unique code for the targeted message
-     * @param args A record containing the placeholder token values for the message
-     */
-    log<K extends keyof M & string>(code: K, ...args: TokensArg<M[K]>): void;
-
-    /**
-     * Throws an error with the full text of the targeted message in all environments
-     *
-     * _Note: When the `createReporter` function is called in production with an empty
-     * message set, this method will use the "defaultTemplate" option in this format: "&lt;defaultTemplate> (&lt;code>)"_
-     * @param code A direct reference to the unique code for the targeted message
-     * @param args A record containing the placeholder token values for the message
-     */
-    fail<K extends keyof M & string>(code: K, ...args: TokensArg<M[K]>): never;
+    warnOnce<K extends keyof M & string>(code: K, ...args: TokensArg<M[K]>): void;
 }
 
 /**
@@ -153,6 +169,8 @@ export type RuntimeReporterReportPayload = {
      */
     level: "error" | "warn" | "log" | "fail";
 };
+
+type RuntimeReporterLevel = RuntimeReporterReportPayload["level"];
 
 /**
  * The configuration options for createReporter()
@@ -227,6 +245,7 @@ export function createReporter<const M extends RuntimeReporterMessages>(
         onReport,
     } = options;
     const messagesByCode = messages as Record<string, string>;
+    const warnedCodes = new Set<string>();
 
     /**
      * Retrieves the resolved message text for a given code and its associated tokens
@@ -243,35 +262,56 @@ export function createReporter<const M extends RuntimeReporterMessages>(
         return resolveTemplate(template, tokens);
     };
 
+    /**
+     * Resolves the formatted console-facing string and triggers the report hook
+     * @param level The severity level of the report
+     * @param code The unique code associated with the message
+     * @param args The record containing the placeholder token values
+     * @returns The resolved and formatted message pair
+     */
+    const prepareReport = function prepareReport(
+        level: RuntimeReporterLevel,
+        code: string,
+        ...args: Array<Record<string, RuntimeReporterToken>>
+    ): { message: string; formattedMessage: string } {
+        const message = resolveMessage(code, ...args);
+        const formattedMessage = formatMessage(message, code);
+        if (onReport) onReport({ code, message, level });
+        return { message, formattedMessage };
+    };
+
     return {
+        clearWarnings: () => {
+            warnedCodes.clear();
+        },
+        error: (code, ...args) => {
+            const { formattedMessage } = prepareReport("error", code, ...args);
+            if (messagesByCode[code]) console.error(formattedMessage);
+        },
+        fail: (code, ...args) => {
+            const { formattedMessage } = prepareReport("fail", code, ...args);
+            throw new Error(formattedMessage);
+        },
+        log: (code, ...args) => {
+            const { formattedMessage } = prepareReport("log", code, ...args);
+            if (messagesByCode[code]) console.log(formattedMessage);
+        },
         message: (code, ...args) => {
             const message = resolveMessage(code, ...args);
             const formattedMessage = formatMessage(message, code);
             return formattedMessage as MessageReturnType<M, typeof code & keyof M & string>;
         },
-        error: (code, ...args) => {
-            const message = resolveMessage(code, ...args);
-            const formattedMessage = formatMessage(message, code);
-            if (onReport) onReport({ code, message, level: "error" });
-            if (messagesByCode[code]) console.error(formattedMessage);
-        },
         warn: (code, ...args) => {
-            const message = resolveMessage(code, ...args);
-            const formattedMessage = formatMessage(message, code);
-            if (onReport) onReport({ code, message, level: "warn" });
+            const { formattedMessage } = prepareReport("warn", code, ...args);
             if (messagesByCode[code]) console.warn(formattedMessage);
         },
-        log: (code, ...args) => {
-            const message = resolveMessage(code, ...args);
-            const formattedMessage = formatMessage(message, code);
-            if (onReport) onReport({ code, message, level: "log" });
-            if (messagesByCode[code]) console.log(formattedMessage);
-        },
-        fail: (code, ...args) => {
-            const message = resolveMessage(code, ...args);
-            const formattedMessage = formatMessage(message, code);
-            if (onReport) onReport({ code, message, level: "fail" });
-            throw new Error(formattedMessage);
+        warnOnce: (code, ...args) => {
+            if (warnedCodes.has(code)) return;
+
+            warnedCodes.add(code);
+
+            const { formattedMessage } = prepareReport("warn", code, ...args);
+            if (messagesByCode[code]) console.warn(formattedMessage);
         },
     };
 }

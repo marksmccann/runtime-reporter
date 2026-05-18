@@ -132,13 +132,29 @@ const reporter = createReporter(messages, {
     },
 });
 
-// Sends a POST request with the following payload:
+// ✅ Sends a POST request with the following payload:
 // {
 //     code: "ERR02",
 //     message: "MyComponent failed to mount",
 //     level: "error",
 // }
 reporter.error("ERR02", { componentName: "MyComponent" });
+```
+
+### 5. One-Time Warnings
+
+Use `warnOnce()` for warnings that should only be emitted once per reporter instance, such as deprecations or noisy environment notices.
+
+> _Note: `warnOnce()` stores reported warning codes for the life of the reporter instance, so long-lived apps should call `clearWarnings()` at an appropriate lifecycle boundary if those cached codes should not be retained indefinitely._
+
+```ts
+// ✅ Logs the same code only once for this reporter instance
+reporter.warnOnce("ERR02", { componentName: "MyComponent" });
+reporter.warnOnce("ERR02", { componentName: "MyComponent" });
+
+// ✅ Logs again after the warnOnce() cache is cleared
+reporter.clearWarnings();
+reporter.warnOnce("ERR02", { componentName: "MyComponent" });
 ```
 
 ## API Reference
@@ -149,21 +165,23 @@ Takes a strict record of message templates and an optional set of configuration 
 
 ### `RuntimeReporter`
 
-| Method        | Type                                                       | Description                                                                                                                                                                 |
-| :------------ | :--------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`message`** | `(code: string, tokens?: RuntimeReporterTokens) => string` | Compiles and returns the resolved and formatted message without outputting side effects.                                                                                    |
-| **`warn`**    | `(code: string, tokens?: RuntimeReporterTokens) => void`   | Logs using `console.warn` **only if** the provided code template is available in the current environment's `messages` registry.                                             |
-| **`error`**   | `(code: string, tokens?: RuntimeReporterTokens) => void`   | Logs using `console.error` **only if** the provided code template is available in the current environment's `messages` registry.                                            |
-| **`log`**     | `(code: string, tokens?: RuntimeReporterTokens) => void`   | Logs using `console.log` **only if** the provided code template is available in the current environment's `messages` registry.                                              |
-| **`fail`**    | `(code: string, tokens?: RuntimeReporterTokens) => never`  | Throws a runtime `new Error(formattedMessage)` in **all** environments. Falls back safely to `defaultTemplate` if the template is not present (e.g., in Production builds). |
+| Method              | Type                                                       | Description                                                                                                                                                                                                                                                                                     |
+| :------------------ | :--------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`clearWarnings`** | `() => void`                                               | Clears the current reporter instance's internal `warnOnce()` cache so previously deduplicated warning codes can be emitted again.                                                                                                                                                               |
+| **`error`**         | `(code: string, tokens?: RuntimeReporterTokens) => void`   | Logs using `console.error` **only if** the provided code template is available in the current environment's `messages` registry.                                                                                                                                                                |
+| **`fail`**          | `(code: string, tokens?: RuntimeReporterTokens) => never`  | Throws a runtime `new Error(formattedMessage)` in **all** environments. Falls back safely to `defaultTemplate` if the template is not present (e.g., in Production builds).                                                                                                                     |
+| **`log`**           | `(code: string, tokens?: RuntimeReporterTokens) => void`   | Logs using `console.log` **only if** the provided code template is available in the current environment's `messages` registry.                                                                                                                                                                  |
+| **`message`**       | `(code: string, tokens?: RuntimeReporterTokens) => string` | Compiles and returns the resolved and formatted message without outputting side effects.                                                                                                                                                                                                        |
+| **`warn`**          | `(code: string, tokens?: RuntimeReporterTokens) => void`   | Logs using `console.warn` **only if** the provided code template is available in the current environment's `messages` registry.                                                                                                                                                                 |
+| **`warnOnce`**      | `(code: string, tokens?: RuntimeReporterTokens) => void`   | Logs using `console.warn` only the first time that code is reported by the current reporter instance, and only if the code exists in the current environment's `messages` registry. For long-lived reporter instances, call `clearWarnings()` when appropriate to release cached warning codes. |
 
 ### `RuntimeReporterOptions`
 
 | Property              | Type                                              | Required | Description                                                                                                                                                          |
 | :-------------------- | :------------------------------------------------ | :------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **`formatMessage`**   | `(message: string, code: string) => string`       | No       | Overrides the final presentation string pattern. Defaults to: `"<message> (<code>)"`. _This option does not alter the string sent to the `onReport` telemetry hook._ |
 | **`defaultTemplate`** | `string`                                          | No       | Fallback copy applied when an unmatched error code is parsed. Defaults to `"An error occurred"`. Essential for `fail()` error-masking safely in production.          |
-| **`onReport`**        | `(payload: RuntimeReporterReportPayload) => void` | No       | A global hook executed whenever an action triggers via `.error()`, `.warn()`, `.log()`, or `.fail()`.                                                                |
+| **`formatMessage`**   | `(message: string, code: string) => string`       | No       | Overrides the final presentation string pattern. Defaults to: `"<message> (<code>)"`. _This option does not alter the string sent to the `onReport` telemetry hook._ |
+| **`onReport`**        | `(payload: RuntimeReporterReportPayload) => void` | No       | A global hook executed whenever an action triggers via `.error()`, `.warn()`, `.warnOnce()`, `.log()`, or `.fail()`.                                                 |
 
 ### `RuntimeReporterTokens`
 
@@ -184,8 +202,8 @@ type RuntimeReporterMessages = Record<string, string>;
 | Property  | Type                                   | Description                                                                                                                |
 | :-------- | :------------------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
 | `code`    | `string`                               | The unique code key identifier bound to the event.                                                                         |
-| `message` | `string`                               | The parsed text message containing replaced tokens, prior to being processed by any custom global `formatMessage` filters. |
 | `level`   | `"error" \| "warn" \| "log" \| "fail"` | The severity level of the report.                                                                                          |
+| `message` | `string`                               | The parsed text message containing replaced tokens, prior to being processed by any custom global `formatMessage` filters. |
 
 ## Advanced Recipes
 

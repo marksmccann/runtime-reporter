@@ -89,10 +89,12 @@ From [package.json](/Users/mfamily/Sites/runtime-reporter/package.json):
 - Fix lint: `npm run lint:fix`
 - Format: `npm run format`
 - Check formatting: `npm run format:check`
+- Commit: `npm run commit`
 
 ## Editing Guidance
 
 - Keep changes small and centered on [src/index.ts](/Users/mfamily/Sites/runtime-reporter/src/index.ts) unless the public API or docs require more.
 - Update [src/index.test.ts](/Users/mfamily/Sites/runtime-reporter/src/index.test.ts) when runtime or public typing behavior changes.
 - Update [README.md](/Users/mfamily/Sites/runtime-reporter/README.md) when changing the public API, documented examples, or type behavior.
+- Use `npm run commit` when creating commits so the project’s conventional commit workflow is followed.
 - Do not claim support for behavior that is not covered by the code.

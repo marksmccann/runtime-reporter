@@ -21,6 +21,17 @@ inferredReporter.message("ERR04", { name: "ConfigLoader" });
 inferredReporter.message("ERR04", { name: "ConfigLoader", location: "boot" });
 inferredReporter.message("ERR05", { componentName: "Button", stage: "render" });
 
+const assertWarnOnceTypes = () => {
+    inferredReporter.warnOnce("INFO03");
+    // @ts-expect-error token-less templates should not accept a second argument
+    inferredReporter.warnOnce("INFO03", {});
+    // @ts-expect-error tokens should still be required when the template declares them
+    inferredReporter.warnOnce("WARN02");
+    inferredReporter.warnOnce("WARN02", { option: "legacyMode" });
+};
+
+void assertWarnOnceTypes;
+
 describe("createReporter", () => {
     describe("message()", () => {
         it("returns formatted message with token substitution and code suffix", () => {
@@ -106,6 +117,40 @@ describe("createReporter", () => {
             expect(console.warn).toHaveBeenCalledWith("Deprecated: old (WARN02)");
         });
 
+        it("warnOnce() only logs the first time a code is reported", () => {
+            const reporter = createReporter(messages);
+
+            reporter.warnOnce("WARN02", { option: "old" });
+            reporter.warnOnce("WARN02", { option: "new" });
+
+            expect(console.warn).toHaveBeenCalledTimes(1);
+            expect(console.warn).toHaveBeenCalledWith("Deprecated: old (WARN02)");
+        });
+
+        it("warnOnce() tracks codes independently within the same reporter", () => {
+            const reporter = createReporter(messages);
+
+            reporter.warnOnce("WARN02", { option: "old" });
+            reporter.warnOnce("INFO03");
+
+            expect(console.warn).toHaveBeenCalledTimes(2);
+            expect(console.warn).toHaveBeenNthCalledWith(1, "Deprecated: old (WARN02)");
+            expect(console.warn).toHaveBeenNthCalledWith(2, "Ready (INFO03)");
+        });
+
+        it("clearWarnings() allows warnOnce() to log the same code again", () => {
+            const reporter = createReporter(messages);
+
+            reporter.warnOnce("WARN02", { option: "old" });
+            reporter.warnOnce("WARN02", { option: "new" });
+            reporter.clearWarnings();
+            reporter.warnOnce("WARN02", { option: "new" });
+
+            expect(console.warn).toHaveBeenCalledTimes(2);
+            expect(console.warn).toHaveBeenNthCalledWith(1, "Deprecated: old (WARN02)");
+            expect(console.warn).toHaveBeenNthCalledWith(2, "Deprecated: new (WARN02)");
+        });
+
         it("log() logs when code exists in messages", () => {
             const reporter = createReporter(messages);
             reporter.log("INFO03");
@@ -130,6 +175,42 @@ describe("createReporter", () => {
             const reporter = createReporter(messages, { onReport });
             reporter.warn("WARN02", { option: "old" });
 
+            expect(onReport).toHaveBeenCalledWith({
+                code: "WARN02",
+                message: "Deprecated: old",
+                level: "warn",
+            });
+        });
+
+        it('clearWarnings() allows "warnOnce()" to call "onReport" again', () => {
+            const onReport = vi.fn();
+            const reporter = createReporter(messages, { onReport });
+
+            reporter.warnOnce("WARN02", { option: "old" });
+            reporter.warnOnce("WARN02", { option: "new" });
+            reporter.clearWarnings();
+            reporter.warnOnce("WARN02", { option: "new" });
+
+            expect(onReport).toHaveBeenCalledTimes(2);
+            expect(onReport).toHaveBeenNthCalledWith(1, {
+                code: "WARN02",
+                message: "Deprecated: old",
+                level: "warn",
+            });
+            expect(onReport).toHaveBeenNthCalledWith(2, {
+                code: "WARN02",
+                message: "Deprecated: new",
+                level: "warn",
+            });
+        });
+
+        it('should call "onReport" once via "warnOnce()" when provided', () => {
+            const onReport = vi.fn();
+            const reporter = createReporter(messages, { onReport });
+            reporter.warnOnce("WARN02", { option: "old" });
+            reporter.warnOnce("WARN02", { option: "new" });
+
+            expect(onReport).toHaveBeenCalledTimes(1);
             expect(onReport).toHaveBeenCalledWith({
                 code: "WARN02",
                 message: "Deprecated: old",
