@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.10.0](https://github.com/marksmccann/runtime-reporter/compare/v0.9.4...v0.10.0) (2026-05-18)
+
+### Features
+
+* add warnOnce cache controls ([3bbf437](https://github.com/marksmccann/runtime-reporter/commit/3bbf4373f8f4d2d0c9cc11e19aaf087ea25fa049))
+
 ## [0.9.4](https://github.com/marksmccann/runtime-reporter/compare/v0.9.3...v0.9.4) (2026-05-17)
 
 ## [0.9.3](https://github.com/marksmccann/runtime-reporter/compare/v0.9.2...v0.9.3) (2026-05-16)
